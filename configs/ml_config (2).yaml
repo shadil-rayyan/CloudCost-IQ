@@ -1,0 +1,51 @@
+# CloudCost IQ ML configuration (MVP 2).
+model:
+  model_name: cloudcost_iq_global_xgboost_quantile
+  objective: reg:quantileerror
+  quantile_alpha: [0.10, 0.50, 0.90]
+  tree_method: hist
+  forecast_horizon_days: 30
+  random_state: 42
+  enable_categorical: true
+  max_cat_to_onehot: 4
+
+hyperparameters:
+  max_depth: 6
+  learning_rate: 0.05
+  n_estimators: 600
+  min_child_weight: 5
+  subsample: 0.9
+  colsample_bytree: 0.9
+  reg_alpha: 0.0
+  reg_lambda: 1.0
+  early_stopping_rounds: 50
+
+training:
+  target: daily_billed_cost
+  cost_basis: billed
+  currency: USD
+  validation_folds: 3
+  test_horizon_days: 30
+  min_train_days: 90
+  max_gap_days: 7
+  min_history_days: 180
+  preferred_history_days: 365
+  min_observations: 120
+  mlflow_enabled: false
+  mlflow_experiment: cloudcost-iq-forecasting
+  shap_sample_rows: 2000
+
+evaluation:
+  # Promotion gates. A candidate that fails these is never auto-promoted.
+  max_wape: 0.60
+  max_pinball_loss_ratio_vs_baseline: 1.10
+  min_interval_coverage: 0.70
+  max_interval_coverage: 0.95
+  max_quantile_crossing_rate: 0.02
+  require_baseline_comparison: true
+
+artifact:
+  candidates_dir: artifacts/models/candidates
+  staging_dir: artifacts/models/staging
+  production_dir: artifacts/models/production
+  schema_version: "1.0"

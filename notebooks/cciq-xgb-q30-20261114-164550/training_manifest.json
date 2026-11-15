@@ -1,0 +1,39 @@
+{
+  "model_version": "cciq-xgb-q30-20261114-164550",
+  "dataset_fingerprint": "b8072577accc481a173983691fe074d09f519693c342b8479299def81fdc2387",
+  "dataset_start": "2025-09-21",
+  "dataset_end": "2026-11-14",
+  "trained_at": "2026-11-14T16:46:51.842447",
+  "git_commit": "6e45f3c0bb6bf07415b38fb057d46e081b0ef254",
+  "package_versions": {
+    "xgboost": "2.1.4",
+    "pandas": "2.2.3",
+    "numpy": "2.4.6",
+    "pyarrow": "19.0.1",
+    "shap": "0.54.1",
+    "mlflow": "3.18.0"
+  },
+  "random_seed": 42,
+  "providers": [
+    "AWS",
+    "Azure",
+    "GCP"
+  ],
+  "currency": "USD",
+  "cost_basis": "billed",
+  "feature_schema_version": "1.0",
+  "rows": 97740,
+  "series_count": 9,
+  "horizon_days": 30,
+  "target": "daily_billed_cost",
+  "python_version": "3.13.16",
+  "artifact_checksums": {
+    "model.ubj": "4a899e52ec2c32b54cb00c936c4374e3207af361c0fb3069f5cad15b4524978b",
+    "feature_schema.json": "6d4504559083fc0b0001c1488a91cd4f001b3f32b979ccf27b8aa13d24d6ff6a",
+    "model_config.json": "fecc16aad1891303c9ebc56750ca4178368cb95e1751e13040dd8bb4c972887e",
+    "metrics.json": "dab6843b6747b7d07ab44859ceac18876433838dcb7536dc1a6d0369820d3c93",
+    "dataset_quality.json": "aa9e395f4b651a83f9d9e53f4585da7d3a46d375da6182e672b1b6448e057c59",
+    "model_card.md": "d4e00b14fd4734a7c6503e9ae8906f49ce26e120e4183ff0a87b391d0aa42ee6",
+    "evaluation_predictions.parquet": "0223485196510422cf723c002ec705b77faefbc97d468d628da7d574b3cace9c"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "model.ubj": "4a899e52ec2c32b54cb00c936c4374e3207af361c0fb3069f5cad15b4524978b",
+  "feature_schema.json": "6d4504559083fc0b0001c1488a91cd4f001b3f32b979ccf27b8aa13d24d6ff6a",
+  "model_config.json": "fecc16aad1891303c9ebc56750ca4178368cb95e1751e13040dd8bb4c972887e",
+  "metrics.json": "dab6843b6747b7d07ab44859ceac18876433838dcb7536dc1a6d0369820d3c93",
+  "dataset_quality.json": "aa9e395f4b651a83f9d9e53f4585da7d3a46d375da6182e672b1b6448e057c59",
+  "model_card.md": "d4e00b14fd4734a7c6503e9ae8906f49ce26e120e4183ff0a87b391d0aa42ee6",
+  "evaluation_predictions.parquet": "0223485196510422cf723c002ec705b77faefbc97d468d628da7d574b3cace9c"
+}

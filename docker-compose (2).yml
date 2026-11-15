@@ -1,0 +1,23 @@
+services:
+  dashboard:
+    build: .
+    command: ["streamlit", "run", "app/main.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./configs:/app/configs
+      - ./mlruns:/app/mlruns
+    environment:
+      CLOUDCOST_LOG_LEVEL: INFO
+  api:
+    build: .
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./configs:/app/configs
+      - ./mlruns:/app/mlruns

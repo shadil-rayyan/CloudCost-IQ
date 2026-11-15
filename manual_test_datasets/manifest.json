@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "warning": "SYNTHETIC DEMO DATA - not real cloud bills. For CloudCost IQ manual testing only.",
+  "generated_for": "Manual UI/API feature testing (upload, validation, normalization, analytics, data quality, import history, filters, currency handling).",
+  "files": [
+    "01_aws_cur_valid_demo.csv",
+    "02_azure_cost_valid_demo.csv",
+    "03_gcp_billing_valid_demo.csv",
+    "04_focus_multicloud_valid_demo.csv",
+    "05_validation_and_quality_issues_demo.csv",
+    "06_mixed_currency_demo.csv",
+    "07_aws_cur_valid_demo.parquet",
+    "08_aws_cur_valid_demo.csv.gz",
+    "09_focus_bundle_demo.zip"
+  ]
+}

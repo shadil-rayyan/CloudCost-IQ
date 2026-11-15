@@ -1,0 +1,16 @@
+# CloudCost IQ environment configuration.
+# Copy to .env and adjust. Never commit the real .env file.
+
+# Optional overrides (prefix CLOUDCOST_)
+CLOUDCOST_LOG_LEVEL=INFO
+CLOUDCOST_API_HOST=127.0.0.1
+CLOUDCOST_API_PORT=8000
+CLOUDCOST_MAX_UPLOAD_MB=512
+
+# Optional explicit paths (defaults are relative to the project root)
+# CLOUDCOST_DATA_DIR=data
+# CLOUDCOST_ARTIFACTS_DIR=artifacts/models
+
+# MLflow tracking (local file store by default)
+CLOUDCOST_MLFLOW_ENABLED=false
+CLOUDCOST_MLFLOW_TRACKING_URI=./mlruns
