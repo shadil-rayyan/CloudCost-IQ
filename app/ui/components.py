@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -168,7 +169,7 @@ def cohort_selector(summary: dict[str, Any], key: str = "cohort") -> dict[str, A
     if len(summaries) == 1:
         return summaries[0]
     labels = [
-        f"{item.get('currency') or 'unknown currency'} / {item.get('cost_basis') or 'unknown basis'}"
+        f"{item.get('BillingCurrency') or 'unknown currency'} / {item.get('cost_basis') or 'unknown basis'}"
         for item in summaries
     ]
     index = st.selectbox("Reporting cohort", range(len(labels)), format_func=lambda i: labels[i], key=key)
@@ -183,8 +184,8 @@ def kpi_cards(summary: dict[str, Any]) -> None:
     for column, item in zip(columns, summaries[:4], strict=False):
         with column:
             st.metric(
-                label=f"{item['currency']} total ({item['cost_basis']})",
-                value=format_compact_currency(item["total_cost"], item["currency"]),
+                label=f"{item['BillingCurrency']} total ({item['cost_basis']})",
+                value=format_compact_currency(item["total_cost"], item["BillingCurrency"]),
                 delta=f"{item['records']:,} records",
                 delta_color="off",
             )
@@ -198,7 +199,7 @@ def kpi_cards(summary: dict[str, Any]) -> None:
 def trend_chart(
     trend: pd.DataFrame,
     *,
-    dimension: str = "provider",
+    dimension: str = "ServiceProviderName",
     currency: str | None = None,
     basis: str | None = None,
     height: int = 360,
@@ -208,7 +209,7 @@ def trend_chart(
         return
     working = trend.copy()
     if currency is not None:
-        working = working.loc[working["currency"] == currency]
+        working = working.loc[working["BillingCurrency"] == currency]
     if basis is not None:
         working = working.loc[working["cost_basis"] == basis]
     if working.empty:
@@ -299,7 +300,7 @@ def show_import_warnings(warnings: Iterable[dict[str, Any]]) -> None:
 
 def currency_for(summary: dict[str, Any], cohort: dict[str, Any] | None) -> tuple[str | None, str | None]:
     if cohort is not None:
-        return cohort.get("currency"), cohort.get("cost_basis")
+        return cohort.get("BillingCurrency"), cohort.get("cost_basis")
     currencies = summary.get("currencies") or []
     bases = summary.get("cost_bases") or []
     return (currencies[0] if len(currencies) == 1 else None, bases[0] if len(bases) == 1 else None)
@@ -307,7 +308,7 @@ def currency_for(summary: dict[str, Any], cohort: dict[str, Any] | None) -> tupl
 
 def formatting_helpers():
     return {
-        "currency": format_currency,
+        "BillingCurrency": format_currency,
         "compact_currency": format_compact_currency,
         "percent": format_percent,
     }
@@ -318,6 +319,6 @@ def app_context() -> dict[str, Any]:
     return {
         "app_name": config.app_name,
         "version": config.app_version,
-        "currency": config.reporting.default_currency,
+        "BillingCurrency": config.reporting.default_currency,
         "cost_basis": config.reporting.default_cost_basis,
     }

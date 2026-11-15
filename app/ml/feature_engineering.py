@@ -15,8 +15,9 @@ minimum number of observations, and ``days_since_last_observed`` /
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -61,10 +62,10 @@ NUMERIC_FEATURES: tuple[str, ...] = (
 
 #: Categorical features. High-cardinality resource identifiers are excluded.
 CATEGORICAL_FEATURES: tuple[str, ...] = (
-    "provider",
-    "service_category",
-    "service_name",
-    "billing_account_id",
+    "ServiceProviderName",
+    "ServiceCategory",
+    "ServiceName",
+    "BillingAccountId",
 )
 
 ALL_FEATURES: tuple[str, ...] = NUMERIC_FEATURES + CATEGORICAL_FEATURES
@@ -73,10 +74,10 @@ META_COLUMNS: tuple[str, ...] = (
     "series_id",
     "origin_date",
     "target_date",
-    "provider",
-    "billing_account_id",
-    "service_name",
-    "currency",
+    "ServiceProviderName",
+    "BillingAccountId",
+    "ServiceName",
+    "BillingCurrency",
     "cost_basis",
     "target",
     "target_observed",
@@ -95,7 +96,7 @@ class FeatureBuildConfig:
     def categorical_features(self) -> tuple[str, ...]:
         if self.include_account:
             return CATEGORICAL_FEATURES
-        return tuple(name for name in CATEGORICAL_FEATURES if name != "billing_account_id")
+        return tuple(name for name in CATEGORICAL_FEATURES if name != "BillingAccountId")
 
 
 @dataclass(slots=True)
@@ -171,7 +172,7 @@ def build_supervised_dataset(
             )
             continue
         quality["series_used"] += 1
-        quality["candidate_rows"] += int(len(built))
+        quality["candidate_rows"] += len(built)
         quality["rows_with_missing_target"] += int((~built["target_observed"]).sum())
         frames.append(built)
 
@@ -196,7 +197,7 @@ def build_supervised_dataset(
         return SupervisedBuildResult(frame.iloc[0:0].copy(), feature_schema, quality)
 
     quality["rows_with_missing_target"] = missing_target
-    quality["rows_returned"] = int(len(frame))
+    quality["rows_returned"] = len(frame)
     quality["origin_start"] = frame["origin_date"].min().date().isoformat()
     quality["origin_end"] = frame["origin_date"].max().date().isoformat()
     quality["target_start"] = frame["target_date"].min().date().isoformat()
@@ -285,9 +286,9 @@ def _series_training_rows(series: pd.DataFrame, config: FeatureBuildConfig) -> p
     origins["target_observed"] = observed[target_pos]
 
     origins["series_id"] = series["series_id"].iloc[0]
-    for column in ("provider", "billing_account_id", "service_name", "currency", "cost_basis"):
+    for column in ("ServiceProviderName", "BillingAccountId", "ServiceName", "BillingCurrency", "cost_basis"):
         origins[column] = series[column].iloc[0] if column in series.columns else None
-    origins["service_category"] = classify_service(series["service_name"].iloc[0])
+    origins["ServiceCategory"] = classify_service(series["ServiceName"].iloc[0])
 
     _add_calendar_features(origins, "target_date")
     origins["horizon"] = origins["horizon"].astype("int16")
@@ -314,9 +315,9 @@ def _series_inference_rows(series: pd.DataFrame, origin_pos: int, config: Featur
         frame.loc[in_bounds, "target_date"] = known
     frame["origin_date"] = pd.Timestamp(dates[origin_pos])
     frame["series_id"] = series["series_id"].iloc[0]
-    for column in ("provider", "billing_account_id", "service_name", "currency", "cost_basis"):
+    for column in ("ServiceProviderName", "BillingAccountId", "ServiceName", "BillingCurrency", "cost_basis"):
         frame[column] = series[column].iloc[0] if column in series.columns else None
-    frame["service_category"] = classify_service(series["service_name"].iloc[0])
+    frame["ServiceCategory"] = classify_service(series["ServiceName"].iloc[0])
     frame["target"] = np.nan
     frame["target_observed"] = False
     _add_calendar_features(frame, "target_date")
@@ -414,8 +415,8 @@ def build_feature_schema(
 def _category_mappings(panel: pd.DataFrame, categorical_features: Iterable[str]) -> dict[str, list[str]]:
     mappings: dict[str, list[str]] = {}
     for feature in categorical_features:
-        if feature == "service_category":
-            values = panel["service_name"].dropna().astype(str).map(classify_service)
+        if feature == "ServiceCategory":
+            values = panel["ServiceName"].dropna().astype(str).map(classify_service)
         elif feature in panel.columns:
             values = panel[feature].dropna().astype(str)
         else:
@@ -511,7 +512,7 @@ def _unique(names: Iterable[str]) -> list[str]:
 def feature_summary(frame: pd.DataFrame, schema: FeatureSchema) -> dict[str, Any]:
     """Describe engineered features for reports and model cards."""
     summary: dict[str, Any] = {
-        "rows": int(len(frame)),
+        "rows": len(frame),
         "numeric_features": list(schema.numeric_features),
         "categorical_features": list(schema.categorical_features),
     }

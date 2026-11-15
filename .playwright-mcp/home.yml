@@ -1,0 +1,65 @@
+- generic [ref=e2]:
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#stMain"
+  - region "Sidebar" [ref=e7]:
+    - navigation "App pages" [ref=e10]:
+      - list [ref=e11]:
+        - listitem [ref=e12]:
+          - link [ref=e14] [cursor=pointer]:
+            - /url: http://localhost:8501/
+            - paragraph [ref=e17]: main
+        - listitem [ref=e18]:
+          - link [ref=e20] [cursor=pointer]:
+            - /url: http://localhost:8501/anomalies
+            - paragraph [ref=e23]: anomalies
+        - listitem [ref=e24]:
+          - link [ref=e26] [cursor=pointer]:
+            - /url: http://localhost:8501/cost_analysis
+            - paragraph [ref=e29]: cost analysis
+        - listitem [ref=e30]:
+          - link [ref=e32] [cursor=pointer]:
+            - /url: http://localhost:8501/data_quality
+            - paragraph [ref=e35]: data quality
+        - listitem [ref=e36]:
+          - link [ref=e38] [cursor=pointer]:
+            - /url: http://localhost:8501/forecast
+            - paragraph [ref=e41]: forecast
+        - listitem [ref=e42]:
+          - link [ref=e44] [cursor=pointer]:
+            - /url: http://localhost:8501/import_history
+            - paragraph [ref=e47]: import history
+        - listitem [ref=e48]:
+          - link [ref=e50] [cursor=pointer]:
+            - /url: http://localhost:8501/overview
+            - paragraph [ref=e53]: overview
+        - listitem [ref=e54]:
+          - link [ref=e56] [cursor=pointer]:
+            - /url: http://localhost:8501/recommendations
+            - paragraph [ref=e59]: recommendations
+        - listitem [ref=e60]:
+          - link [ref=e62] [cursor=pointer]:
+            - /url: http://localhost:8501/settings
+            - paragraph [ref=e65]: settings
+        - listitem [ref=e66]:
+          - link [ref=e68] [cursor=pointer]:
+            - /url: http://localhost:8501/upload
+            - paragraph [ref=e71]: upload
+  - generic [ref=e4]:
+    - banner [ref=e75]:
+      - generic [ref=e78]:
+        - button "Deploy" [ref=e80] [cursor=pointer]
+        - button "Main menu" [ref=e84] [cursor=pointer]
+    - main [ref=e5]:
+      - alert [ref=e92]:
+        - generic [ref=e94]:
+          - generic [ref=e95]: "ModuleNotFoundError: No module named 'app'"
+          - generic [ref=e96]:
+            - generic [ref=e97]: "Traceback:"
+            - code [ref=e100]:
+              - generic [ref=e101]: File "/home/shadil/Downloads/CloudCost-IQ/app/main.py", line 16, in <module> from app.core.config import get_app_config
+          - generic [ref=e102]:
+            - button "Copy" [ref=e103] [cursor=pointer]
+            - link "Ask Google" [ref=e104] [cursor=pointer]:
+              - /url: https://www.google.com/search?q=ModuleNotFoundError%3A%20No%20module%20named%20'app'
+            - link "Ask ChatGPT" [ref=e105] [cursor=pointer]:
+              - /url: https://chatgpt.com/?q=ModuleNotFoundError%3A%20No%20module%20named%20'app'%0A%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fmain.py%22%2C%20line%2016%2C%20in%20%3Cmodule%3E%0A%20%20%20%20from%20app.core.config%20import%20get_app_config

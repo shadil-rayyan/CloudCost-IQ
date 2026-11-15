@@ -30,12 +30,11 @@ from app.processing.deduplication import (
     find_duplicate_imports,
     merge_reports,
 )
-from app.processing.normalization import empty_normalized_frame, finalize_records
+from app.processing.normalization import finalize_records
 from app.processing.storage import ProcessedStore
 from app.processing.validation import ValidationReport, validate_batch
 from app.utils.dates import utc_now
 from app.utils.files import human_size, sanitize_filename, sha256_file
-from app.utils.formatting import safe_json_dumps
 
 
 @dataclass(slots=True)
@@ -88,7 +87,7 @@ class ImportAnalysis:
             "import_id": self.staged.import_id,
             "filename": self.staged.filename,
             "file_size": human_size(self.staged.size_bytes),
-            "provider": self.detected.provider,
+            "ServiceProviderName": self.detected.provider,
             "provider_score": round(self.detected.score, 3),
             "schema_name": self.detected.parser.schema_name,
             "cost_basis": self.cost_basis,
@@ -100,7 +99,7 @@ class ImportAnalysis:
             "exact_duplicate_imports": self.duplicates.duplicate_import_ids,
             "replaceable_imports": self.duplicates.replaceable_import_ids,
             "partial_overlap_imports": self.duplicates.partial_overlap_import_ids,
-            "currencies": sorted(valid["currency"].dropna().unique().tolist()) if not valid.empty else [],
+            "currencies": sorted(valid["BillingCurrency"].dropna().unique().tolist()) if not valid.empty else [],
             "coverage_start": _coverage(valid)[0],
             "coverage_end": _coverage(valid)[1],
             "notes": self.notes,
@@ -133,13 +132,13 @@ class ImportOutcome:
         return {
             "import_id": self.import_id,
             "status": self.status,
-            "provider": self.provider,
+            "ServiceProviderName": self.provider,
             "filename": self.filename,
             "records_read": self.records_read,
             "valid_records": self.valid_records,
             "rejected_records": self.rejected_records,
             "duplicate_records": self.duplicate_records,
-            "currency": self.currency,
+            "BillingCurrency": self.currency,
             "cost_basis": self.cost_basis,
             "coverage_start": self.coverage_start,
             "coverage_end": self.coverage_end,
@@ -349,7 +348,7 @@ class ImportManager:
             return outcome
 
         valid = report.valid_frame
-        currencies = sorted(valid["currency"].dropna().astype(str).unique().tolist())
+        currencies = sorted(valid["BillingCurrency"].dropna().astype(str).unique().tolist())
         outcome.currency = currencies[0] if len(currencies) == 1 else None
         coverage_start, coverage_end = _coverage(valid)
         outcome.coverage_start = coverage_start

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Final
 
-NORMALIZED_SCHEMA_VERSION: Final[str] = "1.0"
+NORMALIZED_SCHEMA_VERSION: Final[str] = "1.4"
 
 #: Supported provider discriminators in the normalized dataset.
 PROVIDERS: Final[tuple[str, ...]] = ("AWS", "Azure", "GCP", "FOCUS")
@@ -36,35 +36,39 @@ CHARGE_CATEGORIES: Final[tuple[str, ...]] = (
 #: Normalized column order for processed billing records.
 NORMALIZED_COLUMNS: Final[tuple[str, ...]] = (
     "record_id",
-    "provider",
-    "billing_account_id",
-    "billing_account_name",
+    "ServiceProviderName",
+    "BillingAccountId",
+    "BillingAccountName",
+    "SubAccountId",
     "linked_account_id",
     "subscription_id",
     "project_id",
     "project_name",
-    "service_name",
-    "service_category",
-    "sku_id",
-    "sku_description",
-    "resource_id",
-    "region",
+    "ServiceName",
+    "ServiceCategory",
+    "SkuId",
+    "SkuDescription",
+    "ResourceId",
+    "RegionName",
     "usage_start",
     "usage_end",
-    "charge_period_start",
-    "charge_period_end",
+    "ChargePeriodStart",
+    "ChargePeriodEnd",
     "invoice_month",
-    "cost_amount",
-    "currency",
+    "BilledCost",
+    "EffectiveCost",
+    "ListCost",
+    "ContractedCost",
+    "BillingCurrency",
     "cost_basis",
-    "quantity",
-    "unit",
+    "ConsumedQuantity",
+    "ConsumedUnit",
     "credits_amount",
     "tax_amount",
-    "charge_category",
+    "ChargeCategory",
     "charge_type",
-    "pricing_model",
-    "tags_json",
+    "PricingCategory",
+    "Tags",
     "raw_fields_json",
     "source_file_id",
     "import_batch_id",
@@ -75,13 +79,19 @@ NORMALIZED_COLUMNS: Final[tuple[str, ...]] = (
 DATETIME_COLUMNS: Final[tuple[str, ...]] = (
     "usage_start",
     "usage_end",
-    "charge_period_start",
-    "charge_period_end",
+    "ChargePeriodStart",
+    "ChargePeriodEnd",
 )
 
 NUMERIC_COLUMNS: Final[tuple[str, ...]] = (
-    "cost_amount",
-    "quantity",
+    "BilledCost",
+    "EffectiveCost",
+    "ListCost",
+    "ContractedCost",
+    "EffectiveCost",
+    "ListCost",
+    "ContractedCost",
+    "ConsumedQuantity",
     "credits_amount",
     "tax_amount",
 )

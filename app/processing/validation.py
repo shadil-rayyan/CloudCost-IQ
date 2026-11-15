@@ -156,9 +156,9 @@ def validate_batch(
 
     usage_start = pd.to_datetime(working["usage_start"], errors="coerce")
     usage_end = pd.to_datetime(working["usage_end"], errors="coerce")
-    charge_start = pd.to_datetime(working["charge_period_start"], errors="coerce")
-    charge_end = pd.to_datetime(working["charge_period_end"], errors="coerce")
-    cost = pd.to_numeric(working["cost_amount"], errors="coerce")
+    charge_start = pd.to_datetime(working["ChargePeriodStart"], errors="coerce")
+    charge_end = pd.to_datetime(working["ChargePeriodEnd"], errors="coerce")
+    cost = pd.to_numeric(working["BilledCost"], errors="coerce")
 
     add_error(
         "missing_usage_start",
@@ -172,23 +172,23 @@ def validate_batch(
         "error",
         "Records are missing a numeric cost amount.",
         cost.isna(),
-        "cost_amount",
+        "BilledCost",
     )
     add_error(
         "missing_currency",
         "error",
         "Records are missing a billing currency.",
-        working["currency"].isna(),
-        "currency",
+        working["BillingCurrency"].isna(),
+        "BillingCurrency",
     )
-    currency = working["currency"].astype("string")
+    currency = working["BillingCurrency"].astype("string")
     invalid_currency = currency.notna() & ~currency.str.match(CURRENCY_PATTERN, na=False)
     add_error(
         "invalid_currency",
         "error",
         "Records use a currency code that is not a 3-letter ISO code.",
         invalid_currency,
-        "currency",
+        "BillingCurrency",
     )
     add_error(
         "unsupported_cost_basis",
@@ -201,8 +201,8 @@ def validate_batch(
         "missing_provider",
         "error",
         "Records are missing a provider.",
-        working["provider"].isna(),
-        "provider",
+        working["ServiceProviderName"].isna(),
+        "ServiceProviderName",
     )
     add_error(
         "usage_end_before_start",
@@ -216,7 +216,7 @@ def validate_batch(
         "error",
         "Charge period end precedes charge period start.",
         charge_end.notna() & charge_start.notna() & (charge_end < charge_start),
-        "charge_period_end",
+        "ChargePeriodEnd",
     )
 
     add_issue(
@@ -231,14 +231,14 @@ def validate_batch(
         "warning",
         "Records have no charge period start; usage timestamps will be used for daily aggregation.",
         charge_start.isna(),
-        "charge_period_start",
+        "ChargePeriodStart",
     )
     add_issue(
         "missing_service_name",
         "warning",
         "Records have no service name and cannot be fully attributed.",
-        working["service_name"].isna(),
-        "service_name",
+        working["ServiceName"].isna(),
+        "ServiceName",
     )
     add_issue(
         "missing_invoice_month",
@@ -258,8 +258,8 @@ def validate_batch(
         "negative_quantity",
         "warning",
         "Records contain negative usage quantities (refunds or corrections).",
-        pd.to_numeric(working["quantity"], errors="coerce").fillna(0) < 0,
-        "quantity",
+        pd.to_numeric(working["ConsumedQuantity"], errors="coerce").fillna(0) < 0,
+        "ConsumedQuantity",
     )
     if allow_zero_cost:
         add_issue(
@@ -267,28 +267,28 @@ def validate_batch(
             "info",
             "Records have a zero cost (free tier, credits or zero-rated usage).",
             cost.fillna(1) == 0,
-            "cost_amount",
+            "BilledCost",
         )
     add_issue(
         "negative_cost_records",
         "info",
         "Records have negative cost (credits, refunds or adjustments); they are preserved.",
         cost.fillna(0) < 0,
-        "cost_amount",
+        "BilledCost",
     )
     add_issue(
         "missing_resource_id",
         "info",
         "Records have no resource ID. This is normal for aggregate billing lines.",
-        working["resource_id"].isna(),
-        "resource_id",
+        working["ResourceId"].isna(),
+        "ResourceId",
     )
     add_issue(
         "missing_region",
         "info",
         "Records have no region.",
-        working["region"].isna(),
-        "region",
+        working["RegionName"].isna(),
+        "RegionName",
     )
 
     # Exact duplicate detection is informational: identical-looking rows can be

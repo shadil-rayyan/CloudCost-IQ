@@ -15,21 +15,21 @@ def _group_key_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
         return []
     working = add_billing_date(frame)
     summaries: list[dict[str, Any]] = []
-    for (currency, basis), group in working.groupby(["currency", "cost_basis"], dropna=False):
-        cost = pd.to_numeric(group["cost_amount"], errors="coerce").fillna(0.0)
+    for (currency, basis), group in working.groupby(["BillingCurrency", "cost_basis"], dropna=False):
+        cost = pd.to_numeric(group["BilledCost"], errors="coerce").fillna(0.0)
         dates = group["billing_date"].dropna()
         providers = (
-            group.groupby("provider")["cost_amount"]
+            group.groupby("ServiceProviderName")["BilledCost"]
             .sum()
             .sort_values(ascending=False)
             .to_dict()
         )
         summaries.append(
             {
-                "currency": currency,
+                "BillingCurrency": currency,
                 "cost_basis": basis,
                 "total_cost": float(cost.sum()),
-                "records": int(len(group)),
+                "records": len(group),
                 "first_date": dates.min().date().isoformat() if not dates.empty else None,
                 "last_date": dates.max().date().isoformat() if not dates.empty else None,
                 "days": int(dates.nunique()),
@@ -45,14 +45,14 @@ def _group_key_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
 def summarize_costs(frame: pd.DataFrame) -> dict[str, Any]:
     """Return a complete, currency-safe summary of the selected records."""
     summaries = _group_key_rows(frame)
-    currencies = sorted({item["currency"] for item in summaries if item["currency"]})
+    currencies = sorted({item["BillingCurrency"] for item in summaries if item["BillingCurrency"]})
     bases = sorted({item["cost_basis"] for item in summaries if item["cost_basis"]})
     combined_total = None
     if len(currencies) == 1 and len(bases) == 1 and summaries:
         combined_total = float(sum(item["total_cost"] for item in summaries))
     return {
         "summaries": summaries,
-        "records": int(len(frame)) if frame is not None else 0,
+        "records": len(frame) if frame is not None else 0,
         "currencies": currencies,
         "cost_bases": bases,
         "combined_total": combined_total,
@@ -71,7 +71,7 @@ def kpis(frame: pd.DataFrame) -> list[dict[str, Any]]:
             {
                 "label": "Total cost",
                 "value": item["total_cost"],
-                "currency": item["currency"],
+                "BillingCurrency": item["BillingCurrency"],
                 "caption": f"{item['cost_basis']} basis | {item['records']:,} records",
             }
         )
@@ -80,7 +80,7 @@ def kpis(frame: pd.DataFrame) -> list[dict[str, Any]]:
             {
                 "label": "Total cost",
                 "value": 0.0,
-                "currency": None,
+                "BillingCurrency": None,
                 "caption": "No billing records in the selected scope",
             }
         )
@@ -89,13 +89,13 @@ def kpis(frame: pd.DataFrame) -> list[dict[str, Any]]:
 
 def provider_totals(frame: pd.DataFrame) -> pd.DataFrame:
     if frame is None or frame.empty:
-        return pd.DataFrame(columns=["provider", "currency", "cost_basis", "cost", "share", "records"])
+        return pd.DataFrame(columns=["ServiceProviderName", "BillingCurrency", "cost_basis", "cost", "share", "records"])
     grouped = (
-        frame.groupby(["provider", "currency", "cost_basis"], dropna=False)
-        .agg(cost=("cost_amount", "sum"), records=("cost_amount", "size"))
+        frame.groupby(["ServiceProviderName", "BillingCurrency", "cost_basis"], dropna=False)
+        .agg(cost=("BilledCost", "sum"), records=("BilledCost", "size"))
         .reset_index()
     )
-    totals = grouped.groupby(["currency", "cost_basis"])["cost"].transform("sum").replace(0, pd.NA)
+    totals = grouped.groupby(["BillingCurrency", "cost_basis"])["cost"].transform("sum").replace(0, pd.NA)
     grouped["share"] = (grouped["cost"] / totals).fillna(0.0)
     return grouped.sort_values("cost", ascending=False).reset_index(drop=True)
 
@@ -103,12 +103,12 @@ def provider_totals(frame: pd.DataFrame) -> pd.DataFrame:
 def monthly_totals(frame: pd.DataFrame) -> pd.DataFrame:
     """Invoice-month totals, preserving invoice month semantics."""
     if frame is None or frame.empty:
-        return pd.DataFrame(columns=["invoice_month", "currency", "cost_basis", "cost", "records"])
+        return pd.DataFrame(columns=["invoice_month", "BillingCurrency", "cost_basis", "cost", "records"])
     return (
-        frame.groupby(["invoice_month", "currency", "cost_basis"], dropna=False)
-        .agg(cost=("cost_amount", "sum"), records=("cost_amount", "size"))
+        frame.groupby(["invoice_month", "BillingCurrency", "cost_basis"], dropna=False)
+        .agg(cost=("BilledCost", "sum"), records=("BilledCost", "size"))
         .reset_index()
-        .sort_values(["invoice_month", "currency"])
+        .sort_values(["invoice_month", "BillingCurrency"])
     )
 
 
@@ -118,7 +118,7 @@ def fastest_growing_services(
     """Compare the last ``lookback_days`` against the preceding period."""
     if frame is None or frame.empty:
         return pd.DataFrame(
-            columns=["service_name", "currency", "cost_basis", "recent", "previous", "change", "change_pct"]
+            columns=["ServiceName", "BillingCurrency", "cost_basis", "recent", "previous", "change", "change_pct"]
         )
     working = add_billing_date(frame)
     latest = working["billing_date"].max()
@@ -130,9 +130,9 @@ def fastest_growing_services(
     previous = working.loc[
         (working["billing_date"] >= previous_start) & (working["billing_date"] < recent_start)
     ]
-    keys = ["service_name", "currency", "cost_basis"]
-    recent_totals = recent.groupby(keys, dropna=False)["cost_amount"].sum().rename("recent")
-    previous_totals = previous.groupby(keys, dropna=False)["cost_amount"].sum().rename("previous")
+    keys = ["ServiceName", "BillingCurrency", "cost_basis"]
+    recent_totals = recent.groupby(keys, dropna=False)["BilledCost"].sum().rename("recent")
+    previous_totals = previous.groupby(keys, dropna=False)["BilledCost"].sum().rename("previous")
     combined = pd.concat([recent_totals, previous_totals], axis=1).fillna(0.0).reset_index()
     combined["change"] = combined["recent"] - combined["previous"]
     combined["change_pct"] = combined.apply(

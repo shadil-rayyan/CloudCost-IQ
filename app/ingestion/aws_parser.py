@@ -53,7 +53,7 @@ class AWSCURParser(BaseBillingParser):
                 "usage_start_date",
             ),
             "cost": _BILLED_COST_ALIASES + _AMORTIZED_COST_ALIASES,
-            "currency": ("line_item_currency_code", "pricing_currency", "currency_code"),
+            "BillingCurrency": ("line_item_currency_code", "pricing_currency", "currency_code"),
             "service": ("product_servicecode", "product_product_name", "line_item_product_code"),
         }
 
@@ -73,53 +73,53 @@ class AWSCURParser(BaseBillingParser):
         frame["usage_end"] = resolver.datetime(
             raw, "line_item_usage_end_date", "line_item_usage_end_time", "usage_end_date"
         )
-        frame["charge_period_start"] = resolver.datetime(
+        frame["ChargePeriodStart"] = resolver.datetime(
             raw, "bill_billing_period_start_date", "bill_billing_period_start"
         )
-        frame["charge_period_end"] = resolver.datetime(
+        frame["ChargePeriodEnd"] = resolver.datetime(
             raw, "bill_billing_period_end_date", "bill_billing_period_end"
         )
 
         amortized = cost_basis in {"amortized", "effective"}
         aliases = _AMORTIZED_COST_ALIASES if amortized else _BILLED_COST_ALIASES
-        frame["cost_amount"] = resolver.numeric(raw, *aliases)
-        if frame["cost_amount"].isna().all():
+        frame["BilledCost"] = resolver.numeric(raw, *aliases)
+        if frame["BilledCost"].isna().all():
             fallback = _BILLED_COST_ALIASES if amortized else _AMORTIZED_COST_ALIASES
-            frame["cost_amount"] = resolver.numeric(raw, *fallback)
-            if frame["cost_amount"].notna().any():
+            frame["BilledCost"] = resolver.numeric(raw, *fallback)
+            if frame["BilledCost"].notna().any():
                 notes.append(
                     f"Requested {cost_basis} cost was unavailable; the closest available AWS cost column was used."
                 )
 
-        frame["currency"] = resolver.text(
+        frame["BillingCurrency"] = resolver.text(
             raw, "line_item_currency_code", "pricing_currency", "currency_code"
         )
 
         usage_account = resolver.text(raw, "line_item_usage_account_id", "line_item_usage_account")
         payer_account = resolver.text(raw, "bill_payer_account_id", "bill_billing_entity")
-        frame["billing_account_id"] = payer_account.where(payer_account.notna(), usage_account)
+        frame["BillingAccountId"] = payer_account.where(payer_account.notna(), usage_account)
         frame["linked_account_id"] = usage_account
-        frame["billing_account_name"] = resolver.text(
+        frame["BillingAccountName"] = resolver.text(
             raw, "line_item_usage_account_name", "bill_payer_account_name"
         )
 
-        frame["service_name"] = resolver.first_text(
+        frame["ServiceName"] = resolver.first_text(
             raw,
             [
                 ("product_servicecode", "line_item_product_code"),
                 ("product_product_name",),
             ],
         )
-        frame["sku_id"] = resolver.text(raw, "product_sku", "product_skucode", "line_item_usage_type")
-        frame["sku_description"] = resolver.first_text(
+        frame["SkuId"] = resolver.text(raw, "product_sku", "product_skucode", "line_item_usage_type")
+        frame["SkuDescription"] = resolver.first_text(
             raw,
             [
                 ("line_item_usage_type", "product_usagetype"),
                 ("product_product_name",),
             ],
         )
-        frame["resource_id"] = resolver.text(raw, "line_item_resource_id", "resource_id")
-        frame["region"] = resolver.first_text(
+        frame["ResourceId"] = resolver.text(raw, "line_item_resource_id", "ResourceId")
+        frame["RegionName"] = resolver.first_text(
             raw, [("product_region_code", "product_region"), ("line_item_availability_zone",)]
         )
 
@@ -127,17 +127,17 @@ class AWSCURParser(BaseBillingParser):
         unit = resolver.first_text(
             raw, [("pricing_unit", "line_item_usage_amount_unit"), ("product_unit",)]
         )
-        frame["quantity"] = quantity
-        frame["unit"] = unit
+        frame["ConsumedQuantity"] = quantity
+        frame["ConsumedUnit"] = unit
 
         charge_type = resolver.text(
             raw, "line_item_line_item_type", "line_item_line_item_description", "charge_type"
         )
         frame["charge_type"] = charge_type
-        frame["charge_category"] = build_charge_category_from_types(charge_type, provider="aws")
+        frame["ChargeCategory"] = build_charge_category_from_types(charge_type, provider="aws")
 
-        pricing_term = resolver.text(raw, "pricing_term", "pricing_model")
-        frame["pricing_model"] = _aws_pricing_model(pricing_term, charge_type)
+        pricing_term = resolver.text(raw, "pricing_term", "PricingCategory")
+        frame["PricingCategory"] = _aws_pricing_model(pricing_term, charge_type)
 
         invoice_source = resolver.datetime(
             raw, "bill_billing_period_start_date", "bill_billing_period_start"
@@ -145,10 +145,10 @@ class AWSCURParser(BaseBillingParser):
         invoice = month_key(invoice_source)
         frame["invoice_month"] = invoice.where(invoice.notna() & (invoice != ""), None)
 
-        frame["tags_json"] = _aws_tags(raw, resolver)
+        frame["Tags"] = _aws_tags(raw, resolver)
 
-        cost = frame["cost_amount"]
-        category = frame["charge_category"]
+        cost = frame["BilledCost"]
+        category = frame["ChargeCategory"]
         frame["tax_amount"] = cost.where(category == "tax")
         frame["credits_amount"] = cost.where(category.isin(["credit", "refund"]))
         return frame

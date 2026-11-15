@@ -63,7 +63,7 @@ def detect_within_batch(frame: pd.DataFrame) -> DuplicateReport:
     mask = exact_duplicate_mask(frame)
     return DuplicateReport(
         exact_duplicate_rows=int(mask.sum()) if len(mask) else 0,
-        records_considered=int(len(frame)) if frame is not None else 0,
+        records_considered=len(frame) if frame is not None else 0,
     )
 
 

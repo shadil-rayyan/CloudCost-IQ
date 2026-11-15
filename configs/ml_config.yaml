@@ -31,8 +31,6 @@ training:
   min_history_days: 180
   preferred_history_days: 365
   min_observations: 120
-  mlflow_enabled: false
-  mlflow_experiment: cloudcost-iq-forecasting
   shap_sample_rows: 2000
 
 evaluation:

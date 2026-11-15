@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import datetime as dt
 import math
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import pandas as pd
 
@@ -55,9 +56,7 @@ def records(frame: pd.DataFrame | None) -> list[dict[str, Any]]:
 def _clean(row: dict[str, Any]) -> dict[str, Any]:
     cleaned: dict[str, Any] = {}
     for key, value in row.items():
-        if value is None:
-            cleaned[str(key)] = None
-        elif isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        if value is None or isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
             cleaned[str(key)] = None
         elif isinstance(value, (pd.Timestamp, dt.datetime, dt.date)):
             cleaned[str(key)] = pd.Timestamp(value).isoformat()

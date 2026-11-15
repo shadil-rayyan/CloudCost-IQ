@@ -31,8 +31,8 @@ from app.database.repositories import ForecastRepository
 from app.ml.artifact_manager import ArtifactManager, ModelBundle
 from app.ml.dataset_builder import DatasetBuildConfig, build_daily_panel
 from app.ml.evaluate import enforce_monotonic
-from app.ml.feature_engineering import FeatureBuildConfig, build_inference_features
-from app.ml.model_contract import FeatureSchema, validate_forecast_frame
+from app.ml.feature_engineering import build_inference_features
+from app.ml.model_contract import validate_forecast_frame
 from app.utils.dates import utc_now
 from app.utils.files import write_parquet_atomic
 
@@ -177,14 +177,14 @@ class ForecastService:
                 cost_basis=cost_basis,
             ),
             columns=[
-                "provider",
-                "billing_account_id",
-                "service_name",
-                "currency",
+                "ServiceProviderName",
+                "BillingAccountId",
+                "ServiceName",
+                "BillingCurrency",
                 "cost_basis",
                 "usage_start",
-                "charge_period_start",
-                "cost_amount",
+                "ChargePeriodStart",
+                "BilledCost",
             ],
         )
         if frame.empty:
@@ -236,10 +236,10 @@ class ForecastService:
 
         rows = feature_frame.loc[:, [
             "series_id",
-            "provider",
-            "billing_account_id",
-            "service_name",
-            "currency",
+            "ServiceProviderName",
+            "BillingAccountId",
+            "ServiceName",
+            "BillingCurrency",
             "cost_basis",
             "origin_date",
             "target_date",
@@ -369,11 +369,11 @@ def _summarise(rows: pd.DataFrame, history: pd.DataFrame) -> dict[str, Any]:
     return {
         "totals": totals,
         "series_count": int(rows["series_id"].nunique()),
-        "rows": int(len(rows)),
-        "history_days": int(len(history)),
-        "by_provider": group("provider"),
-        "by_service": group("service_name"),
-        "by_account": group("billing_account_id"),
+        "rows": len(rows),
+        "history_days": len(history),
+        "by_provider": group("ServiceProviderName"),
+        "by_service": group("ServiceName"),
+        "by_account": group("BillingAccountId"),
         "horizon_start": pd.Timestamp(rows["target_date"].min()).date().isoformat()
         if len(rows)
         else None,

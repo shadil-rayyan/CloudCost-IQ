@@ -57,7 +57,7 @@ def cost_timeseries(
     group_by: list[str] | None = Query(default=None),
 ) -> RecordListResponse:
     frame, _ = _filter(providers, currencies, cost_basis, start_date, end_date)
-    keys = tuple(group_by or ("provider",))
+    keys = tuple(group_by or ("ServiceProviderName",))
     trend = cost_trend(frame, freq=granularity, group_by=keys)
     items = records(trend)
     return RecordListResponse(rows=len(items), records=items)

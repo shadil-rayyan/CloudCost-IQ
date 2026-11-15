@@ -79,7 +79,6 @@ def _read_csv_smart(path: Path) -> tuple[pd.DataFrame, str]:
             frame = pd.read_csv(
                 path,
                 sep=delimiter,
-                dtype_backend=None,
                 low_memory=False,
                 **options,
             )
@@ -153,6 +152,16 @@ def read_tabular_file(
                 source = decompressed
                 extension = "parquet"
             else:
+                temporary_directory = Path(tempfile.mkdtemp(prefix="cloudcost-gz-"))
+                decompressed = temporary_directory / path.with_suffix("").name
+                with gzip.open(path, "rb") as source_handle, decompressed.open("wb") as sink:
+                    copied = 0
+                    for chunk in iter(lambda: source_handle.read(1024 * 256), b""):
+                        copied += len(chunk)
+                        if copied > config.max_uncompressed_size_bytes:
+                            raise FileSafetyError("Compressed file exceeds the uncompressed size limit")
+                        sink.write(chunk)
+                source = decompressed
                 extension = "csv"
 
         if extension == "parquet":

@@ -7,7 +7,8 @@ they are benchmarks, not additional ML models.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -98,7 +99,7 @@ def quantile_crossing_rate(frame: pd.DataFrame, columns: tuple[str, str, str] = 
 def evaluate_predictions(
     frame: pd.DataFrame,
     *,
-    group_columns: Iterable[str] = ("provider",),
+    group_columns: Iterable[str] = ("ServiceProviderName",),
     include_horizon_buckets: bool = True,
 ) -> dict[str, Any]:
     """Evaluate out-of-sample predictions.
@@ -250,7 +251,7 @@ def _point_and_quantile_metrics(
     coverage = _interval_coverage(actual, p10, p90)
     width = _interval_width(p10, p90)
     return {
-        "rows": int(len(frame)),
+        "rows": len(frame),
         "mae": mae(actual, p50),
         "rmse": rmse(actual, p50),
         "wape": wape(actual, p50),
@@ -338,7 +339,7 @@ def _baseline_comparison(report: dict[str, Any]) -> dict[str, Any]:
         if not values.get("available"):
             continue
         base_wape = values.get("wape")
-        base_pinball = values.get("pinball_p50")
+        values.get("pinball_p50")
         comparison[f"wape_{name}"] = base_wape
         if model_wape is not None and base_wape is not None and np.isfinite(base_wape) and base_wape > 1e-12:
             comparison[f"wape_improvement_vs_{name}"] = float(1.0 - model_wape / base_wape)

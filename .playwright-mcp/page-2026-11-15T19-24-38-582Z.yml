@@ -1,0 +1,81 @@
+- generic [ref=f1e2]:
+  - link "Skip to main content" [ref=f1e3] [cursor=pointer]:
+    - /url: "#stMain"
+  - region "Sidebar" [ref=f1e7]:
+    - generic [ref=f1e8]:
+      - navigation "App pages" [ref=f1e10]:
+        - list [ref=f1e11]:
+          - generic [ref=f1e12]:
+            - paragraph [ref=f1e16] [cursor=pointer]: CloudCost IQ
+            - listitem [ref=f1e17]:
+              - link [ref=f1e19] [cursor=pointer]:
+                - /url: http://localhost:8505/
+                - paragraph [ref=f1e22]: Overview
+            - listitem [ref=f1e23]:
+              - link [ref=f1e25] [cursor=pointer]:
+                - /url: http://localhost:8505/import
+                - paragraph [ref=f1e28]: Import Billing Data
+            - listitem [ref=f1e29]:
+              - link [ref=f1e31] [cursor=pointer]:
+                - /url: http://localhost:8505/cost-analysis
+                - paragraph [ref=f1e34]: Cost Analysis
+            - listitem [ref=f1e35]:
+              - link [ref=f1e37] [cursor=pointer]:
+                - /url: http://localhost:8505/forecast
+                - paragraph [ref=f1e40]: ML Predictions
+            - listitem [ref=f1e41]:
+              - link [ref=f1e43] [cursor=pointer]:
+                - /url: http://localhost:8505/anomalies
+                - paragraph [ref=f1e46]: Anomaly Detection
+            - listitem [ref=f1e47]:
+              - link [ref=f1e49] [cursor=pointer]:
+                - /url: http://localhost:8505/recommendations
+                - paragraph [ref=f1e52]: Cost Optimization
+            - listitem [ref=f1e53]:
+              - link [ref=f1e55] [cursor=pointer]:
+                - /url: http://localhost:8505/import-history
+                - paragraph [ref=f1e58]: Import History
+            - listitem [ref=f1e59]:
+              - link [ref=f1e61] [cursor=pointer]:
+                - /url: http://localhost:8505/data-quality
+                - paragraph [ref=f1e64]: Data Quality
+            - listitem [ref=f1e65]:
+              - link [ref=f1e67] [cursor=pointer]:
+                - /url: http://localhost:8505/settings
+                - paragraph [ref=f1e70]: Settings
+      - generic [ref=f1e74]:
+        - generic [ref=f1e75]: CloudCost IQ v1.0.0
+        - paragraph [ref=f1e84]: Billing data is analyzed locally. Nothing is modified in your cloud accounts.
+        - heading "Scope" [level=3] [ref=f1e89]
+        - paragraph [ref=f1e94]: No billing data has been imported yet.
+  - generic [ref=f1e4]:
+    - banner [ref=f1e97]:
+      - generic [ref=f1e100]:
+        - button "Deploy" [ref=f1e102] [cursor=pointer]
+        - button "Main menu" [ref=f1e106] [cursor=pointer]
+    - main [ref=f1e5]:
+      - generic [ref=f1e110]:
+        - heading "Overview" [level=1] [ref=f1e115]:
+          - text: Overview
+          - generic [ref=f1e116]:
+            - link "Link to heading":
+              - /url: "#overview"
+        - paragraph [ref=f1e121]: Unified multi-cloud cost visibility. Totals are always shown per currency and cost basis.
+        - status [ref=f1e124]:
+          - paragraph [ref=f1e128]: No billing records are available for this scope.
+        - paragraph [ref=f1e133]: Import an AWS, Azure, GCP or FOCUS billing export from the Import Billing Data page.
+        - heading "Platform status" [level=3] [ref=f1e138]:
+          - text: Platform status
+          - generic [ref=f1e139]:
+            - link "Link to heading":
+              - /url: "#platform-status"
+        - generic [ref=f1e141]:
+          - generic [ref=f1e146]:
+            - paragraph [ref=f1e150]: Completed imports
+            - paragraph [ref=f1e153]: "0"
+          - generic [ref=f1e158]:
+            - paragraph [ref=f1e162]: Failed imports
+            - paragraph [ref=f1e165]: "0"
+          - generic [ref=f1e170]:
+            - paragraph [ref=f1e174]: Production model
+            - paragraph [ref=f1e177]: not registered

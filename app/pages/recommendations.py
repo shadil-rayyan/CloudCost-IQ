@@ -39,13 +39,13 @@ def render() -> None:
     if cohort is None:
         return
     cohort_frame = frame.loc[
-        (frame["currency"] == cohort["currency"]) & (frame["cost_basis"] == cohort["cost_basis"])
+        (frame["BillingCurrency"] == cohort["BillingCurrency"]) & (frame["cost_basis"] == cohort["cost_basis"])
     ].copy()
 
     engine = RecommendationEngine()
     columns = st.columns([1, 1, 3])
     generate = columns[0].button("Run recommendation rules", type="primary")
-    refresh = columns[1].button("Refresh list")
+    columns[1].button("Refresh list")
     columns[2].caption(
         "Rules: service cost increase, budget projection, spending concentration, storage growth, "
         "unused commitment charges and largest 30-day growth."

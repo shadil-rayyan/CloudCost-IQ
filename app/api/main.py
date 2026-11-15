@@ -9,7 +9,11 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import anomalies, costs, forecasts, health, imports, recommendations
 from app.core.config import get_app_config
-from app.core.exceptions import CloudCostError, ModelContractError, ModelNotAvailableError
+from app.core.exceptions import (
+    CloudCostError,
+    ModelContractError,
+    ModelNotAvailableError,
+)
 from app.core.logging import configure_logging
 
 logger = logging.getLogger(__name__)

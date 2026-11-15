@@ -110,17 +110,17 @@ def serialize_raw_rows(raw_frame: pd.DataFrame) -> pd.Series:
 
 def _build_record_ids(df: pd.DataFrame, import_batch_id: str) -> pd.Series:
     key_columns = [
-        "provider",
-        "billing_account_id",
-        "service_name",
-        "sku_id",
-        "resource_id",
+        "ServiceProviderName",
+        "BillingAccountId",
+        "ServiceName",
+        "SkuId",
+        "ResourceId",
         "usage_start",
-        "cost_amount",
-        "currency",
+        "BilledCost",
+        "BillingCurrency",
         "cost_basis",
         "charge_type",
-        "quantity",
+        "ConsumedQuantity",
     ]
     combined = pd.Series([""] * len(df), index=df.index, dtype="object")
     for column in key_columns:
@@ -165,9 +165,9 @@ def finalize_records(
 
     # Fill period timestamps from whichever timestamps the provider supplied,
     # without inventing a duration when the provider does not report one.
-    frame["charge_period_start"] = frame["charge_period_start"].fillna(frame["usage_start"])
-    frame["usage_start"] = frame["usage_start"].fillna(frame["charge_period_start"])
-    frame["charge_period_end"] = frame["charge_period_end"].fillna(frame["usage_end"])
+    frame["ChargePeriodStart"] = frame["ChargePeriodStart"].fillna(frame["usage_start"])
+    frame["usage_start"] = frame["usage_start"].fillna(frame["ChargePeriodStart"])
+    frame["ChargePeriodEnd"] = frame["ChargePeriodEnd"].fillna(frame["usage_end"])
 
     for column in NUMERIC_COLUMNS:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
@@ -180,25 +180,25 @@ def finalize_records(
     # FOCUS files may contain several providers in one file; the parser maps
     # each row's ProviderName. Other formats have a single provider.
     if provider == "FOCUS":
-        frame["provider"] = to_text_series(frame["provider"]).fillna("FOCUS")
+        frame["ServiceProviderName"] = to_text_series(frame["ServiceProviderName"]).fillna("FOCUS")
     else:
-        frame["provider"] = provider
+        frame["ServiceProviderName"] = provider
     frame["cost_basis"] = cost_basis
     frame["schema_version"] = schema_version
     frame["source_file_id"] = source_file_id
     frame["import_batch_id"] = import_batch_id
 
-    frame["currency"] = frame["currency"].map(normalize_currency)
-    frame["invoice_month"] = frame["invoice_month"].fillna(month_key(frame["charge_period_start"]))
+    frame["BillingCurrency"] = frame["BillingCurrency"].map(normalize_currency)
+    frame["invoice_month"] = frame["invoice_month"].fillna(month_key(frame["ChargePeriodStart"]))
 
-    frame["service_category"] = [
+    frame["ServiceCategory"] = [
         category or classify_service(service)
-        for category, service in zip(frame["service_category"], frame["service_name"], strict=False)
+        for category, service in zip(frame["ServiceCategory"], frame["ServiceName"], strict=False)
     ]
 
-    frame["charge_category"] = frame["charge_category"].map(_normalize_charge_category)
+    frame["ChargeCategory"] = frame["ChargeCategory"].map(_normalize_charge_category)
 
-    frame["tags_json"] = frame["tags_json"].map(normalize_tag_payload)
+    frame["Tags"] = frame["Tags"].map(normalize_tag_payload)
 
     if raw_frame is not None and len(raw_frame) == len(frame):
         frame["raw_fields_json"] = serialize_raw_rows(raw_frame.reset_index(drop=True)).values

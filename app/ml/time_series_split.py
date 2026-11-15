@@ -30,11 +30,11 @@ class TimeSeriesFold:
 
     @property
     def train_rows(self) -> int:
-        return int(len(self.train_index))
+        return len(self.train_index)
 
     @property
     def validation_rows(self) -> int:
-        return int(len(self.validation_index))
+        return len(self.validation_index)
 
     def to_dict(self) -> dict[str, Any]:
         def iso(value: pd.Timestamp | None) -> str | None:

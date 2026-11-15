@@ -78,6 +78,7 @@ def _import_file(filename: str, dataset_kind: str = "demo", provider: str = "Aut
 
 def test_manual_datasets_demonstrate_all_features(tmp_path: Path) -> None:
     from fastapi.testclient import TestClient
+
     from app.analytics.store import CostStore
     from app.api.main import app
     from app.database.repositories import ImportRepository

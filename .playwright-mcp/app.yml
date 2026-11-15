@@ -1,0 +1,79 @@
+- generic [ref=e2]:
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#stMain"
+  - region "Sidebar" [ref=e7]:
+    - generic [ref=e8]:
+      - navigation "App pages" [ref=e10]:
+        - list [ref=e11]:
+          - generic [ref=e12]:
+            - paragraph [ref=e16] [cursor=pointer]: CloudCost IQ
+            - listitem [ref=e17]:
+              - link [ref=e19] [cursor=pointer]:
+                - /url: http://localhost:8503/
+                - paragraph [ref=e22]: Overview
+            - listitem [ref=e23]:
+              - link [ref=e25] [cursor=pointer]:
+                - /url: http://localhost:8503/import
+                - paragraph [ref=e28]: Import Billing Data
+            - listitem [ref=e29]:
+              - link [ref=e31] [cursor=pointer]:
+                - /url: http://localhost:8503/cost-analysis
+                - paragraph [ref=e34]: Cost Analysis
+            - listitem [ref=e35]:
+              - link [ref=e37] [cursor=pointer]:
+                - /url: http://localhost:8503/forecast
+                - paragraph [ref=e40]: ML Predictions
+            - listitem [ref=e41]:
+              - link [ref=e43] [cursor=pointer]:
+                - /url: http://localhost:8503/anomalies
+                - paragraph [ref=e46]: Anomaly Detection
+            - listitem [ref=e47]:
+              - link [ref=e49] [cursor=pointer]:
+                - /url: http://localhost:8503/recommendations
+                - paragraph [ref=e52]: Cost Optimization
+            - listitem [ref=e53]:
+              - link [ref=e55] [cursor=pointer]:
+                - /url: http://localhost:8503/import-history
+                - paragraph [ref=e58]: Import History
+            - listitem [ref=e59]:
+              - link [ref=e61] [cursor=pointer]:
+                - /url: http://localhost:8503/data-quality
+                - paragraph [ref=e64]: Data Quality
+            - listitem [ref=e65]:
+              - link [ref=e67] [cursor=pointer]:
+                - /url: http://localhost:8503/settings
+                - paragraph [ref=e70]: Settings
+      - generic [ref=e74]:
+        - generic [ref=e75]: CloudCost IQ v1.0.0
+        - paragraph [ref=e84]: Billing data is analyzed locally. Nothing is modified in your cloud accounts.
+  - generic [ref=e4]:
+    - banner [ref=e87]:
+      - generic [ref=e90]:
+        - button "Deploy" [ref=e92] [cursor=pointer]
+        - button "Main menu" [ref=e96] [cursor=pointer]
+    - main [ref=e5]:
+      - generic [ref=e100]:
+        - heading "Overview" [level=1] [ref=e105]:
+          - text: Overview
+          - generic [ref=e106]:
+            - link "Link to heading":
+              - /url: "#overview"
+        - paragraph [ref=e111]: Unified multi-cloud cost visibility. Totals are always shown per currency and cost basis.
+        - alert [ref=e115]:
+          - generic [ref=e117]:
+            - generic [ref=e118]: "_duckdb.BinderException: Binder Error: Referenced column \"ChargePeriodStart\" not found in FROM clause! Candidate bindings: \"charge_period_start\", \"charge_period_end\", \"charge_category\", \"region\", \"charge_type\" LINE 1: SELECT MIN(COALESCE(\"ChargePeriodStart\", \"usage_start\")), MAX(COALESCE(\"ChargeP... ^"
+            - generic [ref=e119]:
+              - generic [ref=e120]: "Traceback:"
+              - code [ref=e123]:
+                - generic [ref=e124]: File "/home/shadil/Downloads/CloudCost-IQ/app/main.py", line 77, in <module> main()
+                - generic [ref=e125]: File "/home/shadil/Downloads/CloudCost-IQ/app/main.py", line 73, in main navigation.run()
+                - generic [ref=e126]: File "/home/shadil/Downloads/CloudCost-IQ/app/pages/overview.py", line 40, in render filters = scope_sidebar() ^^^^^^^^^^^^^^^
+                - generic [ref=e127]: File "/home/shadil/Downloads/CloudCost-IQ/app/ui/components.py", line 105, in scope_sidebar dimensions = cached_dimensions() ^^^^^^^^^^^^^^^^^^^
+                - generic [ref=e128]: File "/home/shadil/Downloads/CloudCost-IQ/app/ui/components.py", line 32, in cached_dimensions return CostStore().dimensions() ^^^^^^^^^^^^^^^^^^^^^^^^
+                - generic [ref=e129]: File "/home/shadil/Downloads/CloudCost-IQ/app/analytics/store.py", line 158, in dimensions bounds = connection.execute( ^^^^^^^^^^^^^^^^^^^
+            - generic [ref=e130]:
+              - button "Copy" [ref=e131] [cursor=pointer]
+              - link "Ask Google" [ref=e132] [cursor=pointer]:
+                - /url: https://www.google.com/search?q=_duckdb.BinderException%3A%20Binder%20Error%3A%20Referenced%20column%20%22ChargePeriodStart%22%20not%20found%20in%20FROM%20clause!%0ACandidate%20bindings%3A%20%22charge_period_start%22%2C%20%22charge_period_end%22%2C%20%22charge_category%22%2C%20%22region%22%2C%20%22charge_type%22%0A%0ALINE%201%3A%20SELECT%20MIN(COALESCE(%22ChargePeriodStart%22%2C%20%22usage_start%22))%2C%20MAX(COALESCE(%22ChargeP...%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%5E
+              - link "Ask ChatGPT" [ref=e133] [cursor=pointer]:
+                - /url: https://chatgpt.com/?q=_duckdb.BinderException%3A%20Binder%20Error%3A%20Referenced%20column%20%22ChargePeriodStart%22%20not%20found%20in%20FROM%20clause!%0ACandidate%20bindings%3A%20%22charge_period_start%22%2C%20%22charge_period_end%22%2C%20%22charge_category%22%2C%20%22region%22%2C%20%22charge_type%22%0A%0ALINE%201%3A%20SELECT%20MIN(COALESCE(%22ChargePeriodStart%22%2C%20%22usage_start%22))%2C%20MAX(COALESCE(%22ChargeP...%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%5E%0A%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fmain.py%22%2C%20line%2077%2C%20in%20%3Cmodule%3E%0A%20%20%20%20main()%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fmain.py%22%2C%20line%2073%2C%20in%20main%0A%20%20%20%20navigation.run()%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fpages%2Foverview.py%22%2C%20line%2040%2C%20in%20render%0A%20%20%20%20filters%20%3D%20scope_sidebar()%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fui%2Fcomponents.py%22%2C%20line%20105%2C%20in%20scope_sidebar%0A%20%20%20%20dimensions%20%3D%20cached_dimensions()%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fui%2Fcomponents.py%22%2C%20line%2032%2C%20in%20cached_dimensions%0A%20%20%20%20return%20CostStore().dimensions()%0A%20%20%20%20%20%20%20%20%20%20%20%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%0AFile%20%22%2Fhome%2Fshadil%2FDownloads%2FCloudCost-IQ%2Fapp%2Fanalytics%2Fstore.py%22%2C%20line%20158%2C%20in%20dimensions%0A%20%20%20%20bounds%20%3D%20connection.execute(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E

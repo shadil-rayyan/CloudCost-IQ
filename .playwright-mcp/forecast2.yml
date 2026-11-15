@@ -1,0 +1,52 @@
+- generic [ref=f3e2]:
+  - link "Skip to main content" [ref=f3e3] [cursor=pointer]:
+    - /url: "#stMain"
+  - region "Sidebar" [ref=f3e7]:
+    - navigation "App pages" [ref=f3e10]:
+      - list [ref=f3e11]:
+        - listitem [ref=f3e12]:
+          - link [ref=f3e14] [cursor=pointer]:
+            - /url: http://localhost:8506/
+            - paragraph [ref=f3e17]: main
+        - listitem [ref=f3e18]:
+          - link [ref=f3e20] [cursor=pointer]:
+            - /url: http://localhost:8506/anomalies
+            - paragraph [ref=f3e23]: anomalies
+        - listitem [ref=f3e24]:
+          - link [ref=f3e26] [cursor=pointer]:
+            - /url: http://localhost:8506/cost_analysis
+            - paragraph [ref=f3e29]: cost analysis
+        - listitem [ref=f3e30]:
+          - link [ref=f3e32] [cursor=pointer]:
+            - /url: http://localhost:8506/data_quality
+            - paragraph [ref=f3e35]: data quality
+        - listitem [ref=f3e36]:
+          - link [ref=f3e38] [cursor=pointer]:
+            - /url: http://localhost:8506/forecast
+            - paragraph [ref=f3e41]: forecast
+        - listitem [ref=f3e42]:
+          - link [ref=f3e44] [cursor=pointer]:
+            - /url: http://localhost:8506/import_history
+            - paragraph [ref=f3e47]: import history
+        - listitem [ref=f3e48]:
+          - link [ref=f3e50] [cursor=pointer]:
+            - /url: http://localhost:8506/overview
+            - paragraph [ref=f3e53]: overview
+        - listitem [ref=f3e54]:
+          - link [ref=f3e56] [cursor=pointer]:
+            - /url: http://localhost:8506/recommendations
+            - paragraph [ref=f3e59]: recommendations
+        - listitem [ref=f3e60]:
+          - link [ref=f3e62] [cursor=pointer]:
+            - /url: http://localhost:8506/settings
+            - paragraph [ref=f3e65]: settings
+        - listitem [ref=f3e66]:
+          - link [ref=f3e68] [cursor=pointer]:
+            - /url: http://localhost:8506/upload
+            - paragraph [ref=f3e71]: upload
+  - generic [ref=f3e4]:
+    - banner [ref=f3e75]:
+      - generic [ref=f3e78]:
+        - button "Deploy" [ref=f3e80] [cursor=pointer]
+        - button "Main menu" [ref=f3e84] [cursor=pointer]
+    - main [ref=f3e5]

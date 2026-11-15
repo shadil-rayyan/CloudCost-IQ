@@ -1,0 +1,2 @@
+[     205ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8506/forecast/_stcore/health:1
+[     205ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8506/forecast/_stcore/host-config:1

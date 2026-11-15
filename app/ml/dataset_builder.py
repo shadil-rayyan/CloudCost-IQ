@@ -7,7 +7,6 @@ they are never turned into zero-cost days.
 
 from __future__ import annotations
 
-import datetime as dt
 import hashlib
 from dataclasses import dataclass, field
 from typing import Any
@@ -19,10 +18,10 @@ from app.core.config import get_ml_config
 from app.utils.dates import date_span_days
 
 SERIES_KEYS: tuple[str, ...] = (
-    "provider",
-    "billing_account_id",
-    "service_name",
-    "currency",
+    "ServiceProviderName",
+    "BillingAccountId",
+    "ServiceName",
+    "BillingCurrency",
     "cost_basis",
 )
 
@@ -42,7 +41,7 @@ class DatasetBuildConfig:
     series_keys: tuple[str, ...] = SERIES_KEYS
 
     @classmethod
-    def from_ml_config(cls, *, currency: str | None = None, cost_basis: str | None = None) -> "DatasetBuildConfig":
+    def from_ml_config(cls, *, currency: str | None = None, cost_basis: str | None = None) -> DatasetBuildConfig:
         config = get_ml_config()
         training = config.get("training", {})
         model = config.get("model", {})
@@ -60,7 +59,7 @@ class DatasetBuildConfig:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "currency": self.currency,
+            "BillingCurrency": self.currency,
             "cost_basis": self.cost_basis,
             "horizon_days": self.horizon_days,
             "min_history_days": self.min_history_days,
@@ -103,7 +102,7 @@ def series_fingerprint(series_id: str, frame: pd.DataFrame) -> str:
     digest.update(series_id.encode("utf-8"))
     for date, cost in frame.loc[frame["observed"], ["date", "cost"]].itertuples(index=False):
         cost_text = "nan" if pd.isna(cost) else f"{float(cost):.6f}"
-        digest.update(f"|{pd.Timestamp(date).date().isoformat()}:{cost_text}".encode("utf-8"))
+        digest.update(f"|{pd.Timestamp(date).date().isoformat()}:{cost_text}".encode())
     return digest.hexdigest()
 
 
@@ -124,17 +123,17 @@ def build_daily_panel(frame: pd.DataFrame, config: DatasetBuildConfig) -> Datase
         quality = _empty_quality(config, "No billing records were available.")
         return DatasetBuildResult(pd.DataFrame(), quality, config, [], [quality["reason"]])
 
-    required = {"provider", "billing_account_id", "service_name", "currency", "cost_basis",
-                "usage_start", "cost_amount"}
+    required = {"ServiceProviderName", "BillingAccountId", "ServiceName", "BillingCurrency", "cost_basis",
+                "usage_start", "BilledCost"}
     missing = sorted(required - set(frame.columns))
     if missing:
         quality = _empty_quality(config, "Missing required columns: " + ", ".join(missing))
         return DatasetBuildResult(pd.DataFrame(), quality, config, [], [quality["reason"]])
 
     working = frame.copy()
-    working["currency"] = working["currency"].astype("string").str.upper()
+    working["BillingCurrency"] = working["BillingCurrency"].astype("string").str.upper()
     cohort = working.loc[
-        (working["currency"] == config.currency.upper())
+        (working["BillingCurrency"] == config.currency.upper())
         & (working["cost_basis"] == config.cost_basis)
     ].copy()
     if cohort.empty:
@@ -146,21 +145,21 @@ def build_daily_panel(frame: pd.DataFrame, config: DatasetBuildConfig) -> Datase
         return DatasetBuildResult(pd.DataFrame(), quality, config, [], [quality["reason"]])
 
     cohort["billing_date"] = pd.to_datetime(
-        cohort["charge_period_start"].where(
-            cohort["charge_period_start"].notna(), cohort["usage_start"]
+        cohort["ChargePeriodStart"].where(
+            cohort["ChargePeriodStart"].notna(), cohort["usage_start"]
         ),
         errors="coerce",
     ).dt.normalize()
     invalid_dates = int(cohort["billing_date"].isna().sum())
     cohort = cohort.loc[cohort["billing_date"].notna()].copy()
-    cohort["cost_amount"] = pd.to_numeric(cohort["cost_amount"], errors="coerce")
-    invalid_costs = int(cohort["cost_amount"].isna().sum())
-    cohort = cohort.loc[cohort["cost_amount"].notna()].copy()
+    cohort["BilledCost"] = pd.to_numeric(cohort["BilledCost"], errors="coerce")
+    invalid_costs = int(cohort["BilledCost"].isna().sum())
+    cohort = cohort.loc[cohort["BilledCost"].notna()].copy()
 
     keys = [key for key in config.series_keys if key in cohort.columns]
     hourly = (
         cohort.groupby([*keys, "billing_date"], dropna=False)
-        .agg(cost=("cost_amount", "sum"), records=("cost_amount", "size"))
+        .agg(cost=("BilledCost", "sum"), records=("BilledCost", "size"))
         .reset_index()
     )
 
@@ -181,24 +180,24 @@ def build_daily_panel(frame: pd.DataFrame, config: DatasetBuildConfig) -> Datase
         dense["records"] = dense["records"].fillna(0).astype(int)
         dense["series_id"] = _series_id(key_values)
         for key, value in zip(keys, key_values, strict=False):
-            if key not in {"currency", "cost_basis"}:
+            if key not in {"BillingCurrency", "cost_basis"}:
                 dense[key] = value
         # Series identity always carries currency and cost basis.
-        dense["currency"] = config.currency.upper()
+        dense["BillingCurrency"] = config.currency.upper()
         dense["cost_basis"] = config.cost_basis
         dense = dense.sort_values("date").reset_index(drop=True)
 
         observed_days = int(dense["observed"].sum())
-        calendar_days = int(len(dense))
+        calendar_days = len(dense)
         span_days = date_span_days(first.date(), last.date())
         coverage_ratio = observed_days / calendar_days if calendar_days else 0.0
         gaps = _longest_gap(dense["observed"].to_numpy())
         series_quality.append(
             {
                 "series_id": dense["series_id"].iloc[0],
-                "provider": _series_value(dense, "provider"),
-                "billing_account_id": _series_value(dense, "billing_account_id"),
-                "service_name": _series_value(dense, "service_name"),
+                "ServiceProviderName": _series_value(dense, "ServiceProviderName"),
+                "BillingAccountId": _series_value(dense, "BillingAccountId"),
+                "ServiceName": _series_value(dense, "ServiceName"),
                 "first_date": first.date().isoformat(),
                 "last_date": last.date().isoformat(),
                 "span_days": span_days,
@@ -279,15 +278,15 @@ def build_daily_panel(frame: pd.DataFrame, config: DatasetBuildConfig) -> Datase
 
     quality = {
         "schema_version": "1.0",
-        "currency": config.currency.upper(),
+        "BillingCurrency": config.currency.upper(),
         "cost_basis": config.cost_basis,
         "target": "daily_billed_cost",
-        "total_records_input": int(len(cohort)),
-        "eligible_records": int(len(observed)),
+        "total_records_input": len(cohort),
+        "eligible_records": len(observed),
         "rejected_records": int(len(cohort) - len(observed)),
         "invalid_records": int(invalid_dates + invalid_costs),
-        "series_count": int(len(series_quality)),
-        "eligible_series_count": int(len(eligible)),
+        "series_count": len(series_quality),
+        "eligible_series_count": len(eligible),
         "rejected_series_count": int(len(series_quality) - len(eligible)),
         "history_start": overall_start.isoformat(),
         "history_end": overall_end.isoformat(),
@@ -297,12 +296,12 @@ def build_daily_panel(frame: pd.DataFrame, config: DatasetBuildConfig) -> Datase
         "zero_cost_days": zero_cost_days,
         "candidate_rows": None,
         "coverage": {
-            "calendar_days": int(len(eligible_panel)),
-            "observed_days": int(len(observed)),
+            "calendar_days": len(eligible_panel),
+            "observed_days": len(observed),
             "coverage_ratio": float(len(observed) / len(eligible_panel)) if len(eligible_panel) else 0.0,
         },
-        "providers": sorted(eligible_panel["provider"].dropna().astype(str).unique().tolist()),
-        "services": sorted(eligible_panel["service_name"].dropna().astype(str).unique().tolist())[:50],
+        "providers": sorted(eligible_panel["ServiceProviderName"].dropna().astype(str).unique().tolist()),
+        "services": sorted(eligible_panel["ServiceName"].dropna().astype(str).unique().tolist())[:50],
         "series": series_quality,
         "sufficient": bool(sufficient),
         "reason": " ".join(messages),
@@ -324,7 +323,7 @@ def _panel_fingerprint(frame: pd.DataFrame) -> str:
     ordered = frame.sort_values(["series_id", "date"])
     for series_id, date, cost in ordered[["series_id", "date", "cost"]].itertuples(index=False):
         digest.update(
-            f"{series_id}|{pd.Timestamp(date).date().isoformat()}|{float(cost):.6f}\n".encode("utf-8")
+            f"{series_id}|{pd.Timestamp(date).date().isoformat()}|{float(cost):.6f}\n".encode()
         )
     return digest.hexdigest()
 
@@ -352,7 +351,7 @@ def _series_value(frame: pd.DataFrame, column: str) -> str | None:
 def _empty_quality(config: DatasetBuildConfig, reason: str) -> dict[str, Any]:
     return {
         "schema_version": "1.0",
-        "currency": config.currency.upper(),
+        "BillingCurrency": config.currency.upper(),
         "cost_basis": config.cost_basis,
         "target": "daily_billed_cost",
         "total_records_input": 0,
@@ -384,9 +383,9 @@ def select_series(
     """Filter normalized records to a forecast scope."""
     selected = frame
     if provider:
-        selected = selected.loc[selected["provider"] == provider]
+        selected = selected.loc[selected["ServiceProviderName"] == provider]
     if billing_account_id:
-        selected = selected.loc[selected["billing_account_id"] == billing_account_id]
+        selected = selected.loc[selected["BillingAccountId"] == billing_account_id]
     if service_name:
-        selected = selected.loc[selected["service_name"] == service_name]
+        selected = selected.loc[selected["ServiceName"] == service_name]
     return selected.copy()

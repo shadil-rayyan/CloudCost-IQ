@@ -68,8 +68,8 @@ def _render_unavailable(service: ForecastService, reason: str) -> None:
         "\n".join(
             [
                 f"- **Frequency:** daily billing aggregation (the model target is `{training.get('target', 'daily_billed_cost')}`).",
-                f"- **Minimum history:** {training.get('min_history_days', 180)} calendar days "
-                f"(preferred {training.get('preferred_history_days', 365)}).",
+                (f"- **Minimum history:** {training.get('min_history_days', 180)} calendar days "
+                f"(preferred {training.get('preferred_history_days', 365)})."),
                 f"- **Minimum observed daily records:** {training.get('min_observations', 120)} per series.",
                 f"- **Horizon:** {ml_config.get('model', {}).get('forecast_horizon_days', 30)} days, direct multi-horizon.",
                 "- **Currency and cost basis:** one compatible cohort per model artifact.",
@@ -90,7 +90,7 @@ def _render_unavailable(service: ForecastService, reason: str) -> None:
                 [
                     "version",
                     "stage",
-                    "currency",
+                    "BillingCurrency",
                     "cost_basis",
                     "horizon_days",
                     "wape",
@@ -120,7 +120,7 @@ def _render_model_summary(service: ForecastService, availability) -> None:
     columns[0].metric("Model version", availability.version or "-")
     columns[1].metric("Stage", availability.stage or "-")
     columns[2].metric("Horizon", f"{model_config.get('forecast_horizon_days', '-')} days")
-    columns[3].metric("Currency / basis", f"{model_config.get('currency', '-')} / {model_config.get('cost_basis', '-')}")
+    columns[3].metric("Currency / basis", f"{model_config.get('BillingCurrency', '-')} / {model_config.get('cost_basis', '-')}")
     columns[4].metric(
         "Out-of-sample WAPE",
         format_percent(final.get("wape")) if final.get("wape") is not None else "-",
@@ -188,7 +188,7 @@ def _render_generate(service: ForecastService, availability) -> None:
     st.subheader("Generate a forecast")
     dimensions = cached_dimensions()
     model_config = availability.model_config or {}
-    currency = model_config.get("currency", "USD")
+    currency = model_config.get("BillingCurrency", "USD")
     basis = model_config.get("cost_basis", "billed")
 
     controls = st.columns(4)
@@ -317,7 +317,7 @@ def _render_forecast_result(result) -> None:
                 "model_stage": result.model_stage,
                 "origin_date": str(result.origin_date),
                 "horizon_days": result.horizon_days,
-                "currency": result.currency,
+                "BillingCurrency": result.currency,
                 "cost_basis": result.cost_basis,
                 "quantile_alpha": result.model_config.get("quantile_alpha"),
                 "target": result.model_config.get("target"),
@@ -416,7 +416,7 @@ def _render_history() -> None:
             "generated_at": record.generated_at.isoformat()[:19],
             "model_version": record.model_version,
             "scope": record.metrics.get("scope") if record.metrics else None,
-            "currency": record.currency,
+            "BillingCurrency": record.currency,
             "cost_basis": record.cost_basis,
             "horizon_days": record.horizon_days,
             "p50_total": (record.metrics.get("totals", {}) or {}).get("p50"),

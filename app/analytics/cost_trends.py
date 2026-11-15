@@ -11,7 +11,7 @@ def cost_trend(
     frame: pd.DataFrame,
     *,
     freq: str = "D",
-    group_by: tuple[str, ...] = ("provider",),
+    group_by: tuple[str, ...] = ("ServiceProviderName",),
 ) -> pd.DataFrame:
     """Long-format cost trend, grouped by time, currency and cost basis."""
     return aggregate_costs(frame, freq=freq, group_keys=group_by)
@@ -21,7 +21,7 @@ def trend_pivot(
     frame: pd.DataFrame,
     *,
     freq: str = "D",
-    dimension: str = "provider",
+    dimension: str = "ServiceProviderName",
 ) -> pd.DataFrame:
     """Pivot a single currency/basis trend for stacked charting.
 
@@ -31,7 +31,7 @@ def trend_pivot(
     trend = cost_trend(frame, freq=freq, group_by=(dimension,))
     if trend.empty:
         return pd.DataFrame()
-    if trend["currency"].nunique() > 1 or trend["cost_basis"].nunique() > 1:
+    if trend["BillingCurrency"].nunique() > 1 or trend["cost_basis"].nunique() > 1:
         return pd.DataFrame()
     pivot = trend.pivot_table(
         index="period", columns=dimension, values="cost", aggfunc="sum", fill_value=0.0
@@ -47,7 +47,7 @@ def daily_series(single_series_frame: pd.DataFrame) -> pd.Series:
         return pd.Series(dtype="float64")
     working = add_billing_date(single_series_frame)
     return (
-        working.groupby("billing_date")["cost_amount"]
+        working.groupby("billing_date")["BilledCost"]
         .sum()
         .sort_index()
         .astype("float64")
@@ -62,15 +62,15 @@ def moving_average(series: pd.Series, window: int = 7) -> pd.Series:
 
 def cumulative_costs(frame: pd.DataFrame) -> pd.DataFrame:
     if frame is None or frame.empty:
-        return pd.DataFrame(columns=["date", "currency", "cost_basis", "cumulative_cost"])
+        return pd.DataFrame(columns=["date", "BillingCurrency", "cost_basis", "cumulative_cost"])
     working = add_billing_date(frame)
     daily = (
-        working.groupby(["billing_date", "currency", "cost_basis"], dropna=False)["cost_amount"]
+        working.groupby(["billing_date", "BillingCurrency", "cost_basis"], dropna=False)["BilledCost"]
         .sum()
         .reset_index()
         .sort_values("billing_date")
     )
-    daily["cumulative_cost"] = daily.groupby(["currency", "cost_basis"])["cost_amount"].cumsum()
+    daily["cumulative_cost"] = daily.groupby(["BillingCurrency", "cost_basis"])["BilledCost"].cumsum()
     return daily.rename(columns={"billing_date": "date"})
 
 
@@ -80,7 +80,7 @@ def period_change(frame: pd.DataFrame, freq: str = "M") -> pd.DataFrame:
     if trend.empty:
         return trend
     trend = trend.sort_values("period")
-    trend["previous_cost"] = trend.groupby(["currency", "cost_basis"])["cost"].shift(1)
+    trend["previous_cost"] = trend.groupby(["BillingCurrency", "cost_basis"])["cost"].shift(1)
     trend["change"] = trend["cost"] - trend["previous_cost"]
     trend["change_pct"] = trend.apply(
         lambda row: (row["change"] / row["previous_cost"]) if row["previous_cost"] else None, axis=1
@@ -98,8 +98,8 @@ def month_to_date(frame: pd.DataFrame) -> pd.DataFrame:
     month_start = latest.replace(day=1)
     current = working.loc[working["billing_date"] >= month_start]
     return (
-        current.groupby(["currency", "cost_basis"], dropna=False)["cost_amount"]
+        current.groupby(["BillingCurrency", "cost_basis"], dropna=False)["BilledCost"]
         .sum()
         .reset_index()
-        .rename(columns={"cost_amount": "month_to_date"})
+        .rename(columns={"BilledCost": "month_to_date"})
     )

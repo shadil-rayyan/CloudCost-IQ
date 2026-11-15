@@ -97,7 +97,7 @@ class RecommendationEngine:
             monthly_budget = self._budget_from_settings()
 
         drafts: list[RecommendationDraft] = []
-        for (currency, basis), cohort in frame.groupby(["currency", "cost_basis"], dropna=False):
+        for (currency, basis), cohort in frame.groupby(["BillingCurrency", "cost_basis"], dropna=False):
             if not currency:
                 continue
             context = RuleContext(

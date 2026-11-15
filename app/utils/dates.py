@@ -8,7 +8,7 @@ costs across providers. See ``docs/data_dictionary.md``.
 from __future__ import annotations
 
 import datetime as dt
-from typing import Iterable
+from collections.abc import Iterable
 
 import pandas as pd
 
@@ -92,4 +92,4 @@ def date_span_days(start: dt.date | None, end: dt.date | None) -> int:
 
 def utc_now() -> dt.datetime:
     """Current UTC time as a tz-naive datetime (consistent with storage)."""
-    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    return dt.datetime.now(dt.UTC).replace(tzinfo=None)

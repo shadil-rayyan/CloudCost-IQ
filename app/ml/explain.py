@@ -85,7 +85,7 @@ def shap_values(
         "quantile": bundle.model_config.quantile_alpha[quantile_index]
         if quantile_index < len(bundle.model_config.quantile_alpha)
         else None,
-        "rows": int(len(sample)),
+        "rows": len(sample),
         "values": rows,
     }
 

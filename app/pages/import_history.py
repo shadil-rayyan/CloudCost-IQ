@@ -5,7 +5,13 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from app.ui.components import cached_imports, download_csv, empty_state, page_header, show_import_warnings
+from app.ui.components import (
+    cached_imports,
+    download_csv,
+    empty_state,
+    page_header,
+    show_import_warnings,
+)
 from app.utils.formatting import format_number
 
 

@@ -5,9 +5,12 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from app.analytics.anomaly_detection import anomaly_summary, detect_statistical_anomalies
+from app.analytics.anomaly_detection import (
+    anomaly_summary,
+    detect_statistical_anomalies,
+)
 from app.analytics.cost_breakdown import top_services
-from app.analytics.cost_summary import provider_totals, summarize_costs
+from app.analytics.cost_summary import summarize_costs
 from app.analytics.cost_trends import cost_trend
 from app.analytics.provider_comparison import provider_comparison
 from app.core.config import get_app_config
@@ -55,7 +58,7 @@ def render() -> None:
         return
 
     cohort_frame = frame.loc[
-        (frame["currency"] == cohort["currency"]) & (frame["cost_basis"] == cohort["cost_basis"])
+        (frame["BillingCurrency"] == cohort["BillingCurrency"]) & (frame["cost_basis"] == cohort["cost_basis"])
     ]
     if cohort_frame.empty:
         st.info("The selected reporting cohort has no records.")
@@ -63,16 +66,16 @@ def render() -> None:
         return
 
     st.subheader("Daily cost trend")
-    trend = cost_trend(cohort_frame, freq="D", group_by=("provider",))
+    trend = cost_trend(cohort_frame, freq="D", group_by=("ServiceProviderName",))
     trend_chart(trend, currency=currency, basis=basis)
 
     left, right = st.columns(2)
     with left:
         st.subheader("Provider comparison")
         comparison = provider_comparison(cohort_frame)
-        bar_chart(comparison, label_column="provider", currency=currency, height=300)
+        bar_chart(comparison, label_column="ServiceProviderName", currency=currency, height=300)
         st.dataframe(
-            comparison[["provider", "cost", "share", "services", "accounts"]],
+            comparison[["ServiceProviderName", "cost", "share", "services", "accounts"]],
             hide_index=True,
             use_container_width=True,
             column_config={
@@ -83,7 +86,7 @@ def render() -> None:
     with right:
         st.subheader("Top services")
         services = top_services(cohort_frame, top_n=10)
-        bar_chart(services, label_column="service_name", currency=currency, height=300)
+        bar_chart(services, label_column="ServiceName", currency=currency, height=300)
 
     st.subheader("Recent cost anomalies")
     threshold = get_app_config().quality.anomaly_zscore_threshold
@@ -108,7 +111,7 @@ def render() -> None:
             lambda value: format_currency(value, currency)
         )
         st.dataframe(
-            display[["detection_date", "provider", "service_name", "observed_cost", "expected_cost", "severity"]],
+            display[["detection_date", "ServiceProviderName", "ServiceName", "observed_cost", "expected_cost", "severity"]],
             hide_index=True,
             use_container_width=True,
         )

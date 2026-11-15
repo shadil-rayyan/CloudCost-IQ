@@ -50,7 +50,7 @@ def render() -> None:
         return
     currency, basis = currency_for(summary, cohort)
     cohort_frame = frame.loc[
-        (frame["currency"] == cohort["currency"]) & (frame["cost_basis"] == cohort["cost_basis"])
+        (frame["BillingCurrency"] == cohort["BillingCurrency"]) & (frame["cost_basis"] == cohort["cost_basis"])
     ].copy()
 
     service = ForecastService()
@@ -107,9 +107,9 @@ def _statistical(frame: pd.DataFrame, currency: str | None) -> None:
         display[
             [
                 "detection_date",
-                "provider",
-                "billing_account_id",
-                "service_name",
+                "ServiceProviderName",
+                "BillingAccountId",
+                "ServiceName",
                 "observed_cost",
                 "expected_cost",
                 "difference",
@@ -128,7 +128,7 @@ def _statistical(frame: pd.DataFrame, currency: str | None) -> None:
 
     with st.expander("Detection explanations", expanded=False):
         for _, row in anomalies.head(20).iterrows():
-            st.markdown(f"- **{row['detection_date']} / {row['service_name']}** — {row['explanation']}")
+            st.markdown(f"- **{row['detection_date']} / {row['ServiceName']}** — {row['explanation']}")
 
 
 def _forecast_interval(service: ForecastService, availability, filters, currency, basis) -> None:
@@ -159,11 +159,11 @@ def _forecast_interval(service: ForecastService, availability, filters, currency
             return
         actual_source = load_costs(filters)
         actual = (
-            actual_source.loc[actual_source["currency"] == currency]
+            actual_source.loc[actual_source["BillingCurrency"] == currency]
             .assign(date=lambda value: pd.to_datetime(value["usage_start"], errors="coerce").dt.normalize())
-            .groupby("date", as_index=False)["cost_amount"]
+            .groupby("date", as_index=False)["BilledCost"]
             .sum()
-            .rename(columns={"cost_amount": "cost"})
+            .rename(columns={"BilledCost": "cost"})
         )
         forecast = (
             result.rows.assign(date=lambda value: pd.to_datetime(value["target_date"]).dt.normalize())

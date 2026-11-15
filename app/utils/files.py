@@ -58,7 +58,7 @@ def is_supported_upload(path: Path | str) -> bool:
     return extension in {"csv", "parquet", "zip"}
 
 
-def human_size(num_bytes: int | float) -> str:
+def human_size(num_bytes: float) -> str:
     size = float(num_bytes)
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if abs(size) < 1024.0:
@@ -69,7 +69,6 @@ def human_size(num_bytes: int | float) -> str:
 
 def write_parquet_atomic(frame, destination: Path | str) -> Path:
     """Write a parquet file atomically so a crash cannot leave partial output."""
-    import pandas as pd  # local import keeps module import light
 
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)

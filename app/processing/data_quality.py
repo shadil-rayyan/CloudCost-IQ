@@ -14,7 +14,8 @@ day is explicitly marked as complete.
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import pandas as pd
 
@@ -22,12 +23,12 @@ from app.core.constants import NORMALIZED_SCHEMA_VERSION
 from app.database.models import ImportRecord
 from app.utils.dates import missing_dates
 
-DEFAULT_SERIES_KEYS = ("provider", "billing_account_id", "service_name", "currency", "cost_basis")
+DEFAULT_SERIES_KEYS = ("ServiceProviderName", "BillingAccountId", "ServiceName", "BillingCurrency", "cost_basis")
 
 
 def _billing_date(frame: pd.DataFrame) -> pd.Series:
-    if "charge_period_start" in frame.columns and frame["charge_period_start"].notna().any():
-        return pd.to_datetime(frame["charge_period_start"], errors="coerce").dt.normalize()
+    if "ChargePeriodStart" in frame.columns and frame["ChargePeriodStart"].notna().any():
+        return pd.to_datetime(frame["ChargePeriodStart"], errors="coerce").dt.normalize()
     return pd.to_datetime(frame["usage_start"], errors="coerce").dt.normalize()
 
 
@@ -60,7 +61,7 @@ def coverage_by_series(
     for key_values, group in working.groupby(keys, dropna=False):
         if not isinstance(key_values, tuple):
             key_values = (key_values,)
-        daily = group.groupby("_billing_date")["cost_amount"].sum()
+        daily = group.groupby("_billing_date")["BilledCost"].sum()
         observed = [timestamp.date() for timestamp in daily.index]
         first = min(observed)
         last = max(observed)
@@ -76,8 +77,8 @@ def coverage_by_series(
                 "coverage_ratio": (len(observed) / calendar_days) if calendar_days else 0.0,
                 "zero_cost_days": int((daily.fillna(0) == 0).sum()),
                 "missing_days": len(missing),
-                "records": int(len(group)),
-                "cost": float(pd.to_numeric(group["cost_amount"], errors="coerce").sum()),
+                "records": len(group),
+                "cost": float(pd.to_numeric(group["BilledCost"], errors="coerce").sum()),
             }
         )
         rows.append(row)
@@ -123,7 +124,7 @@ def missing_period_details(
                 }
             )
     return {
-        "series_with_gaps": int(len(gaps)),
+        "series_with_gaps": len(gaps),
         "candidate_missing_days": total_missing,
         "examples": examples,
         "note": (
@@ -198,16 +199,16 @@ def quality_summary(
         }
 
     coverage = coverage_by_series(frame)
-    providers = sorted(frame["provider"].dropna().astype(str).unique().tolist())
-    currencies = sorted(frame["currency"].dropna().astype(str).unique().tolist())
+    providers = sorted(frame["ServiceProviderName"].dropna().astype(str).unique().tolist())
+    currencies = sorted(frame["BillingCurrency"].dropna().astype(str).unique().tolist())
     bases = sorted(frame["cost_basis"].dropna().astype(str).unique().tolist())
-    by_provider = frame.groupby("provider").size().astype(int).to_dict()
+    by_provider = frame.groupby("ServiceProviderName").size().astype(int).to_dict()
 
     calendar_days = int(coverage["calendar_days"].sum()) if not coverage.empty else 0
     days_with_records = int(coverage["days_with_records"].sum()) if not coverage.empty else 0
     summary = {
         "schema_version": NORMALIZED_SCHEMA_VERSION,
-        "records": int(len(frame)),
+        "records": len(frame),
         "providers": providers,
         "currencies": currencies,
         "cost_bases": bases,
@@ -215,7 +216,7 @@ def quality_summary(
         "rejected_records": int(sum(record.rejected_records for record in imports)),
         "duplicate_rows_reported": int(sum(record.duplicate_records for record in imports)),
         "coverage": {
-            "series": int(len(coverage)),
+            "series": len(coverage),
             "calendar_days": calendar_days,
             "days_with_records": days_with_records,
             "coverage_ratio": (days_with_records / calendar_days) if calendar_days else 0.0,
@@ -235,7 +236,7 @@ def import_warning_summary(imports: list[ImportRecord]) -> pd.DataFrame:
             rows.append(
                 {
                     "import_id": record.import_id,
-                    "provider": record.provider,
+                    "ServiceProviderName": record.provider,
                     "filename": record.filename,
                     "severity": warning.get("severity", "warning"),
                     "code": warning.get("code"),
@@ -247,7 +248,7 @@ def import_warning_summary(imports: list[ImportRecord]) -> pd.DataFrame:
             rows.append(
                 {
                     "import_id": record.import_id,
-                    "provider": record.provider,
+                    "ServiceProviderName": record.provider,
                     "filename": record.filename,
                     "severity": "error",
                     "code": "import_failed",

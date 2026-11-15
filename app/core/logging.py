@@ -12,7 +12,7 @@ _CONFIGURED = False
 class _SafeFormatter(logging.Formatter):
     """Formatter that never prints billing payloads by accident."""
 
-    def format(self, record: logging.LogRecord) -> str:  # noqa: D102
+    def format(self, record: logging.LogRecord) -> str:
         record.message = record.getMessage() if isinstance(record.msg, str) else str(record.msg)
         if record.exc_info:
             record.exc_text = self.formatException(record.exc_info)

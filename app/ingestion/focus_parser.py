@@ -58,8 +58,8 @@ class FOCUSParser(BaseBillingParser):
     def required_fields(self) -> dict[str, tuple[str, ...]]:
         return {
             "billed_cost": ("billedcost", "billed_cost"),
-            "charge_period_start": ("chargeperiodstart", "charge_period_start"),
-            "charge_period_end": ("chargeperiodend", "charge_period_end"),
+            "ChargePeriodStart": ("chargeperiodstart", "ChargePeriodStart"),
+            "ChargePeriodEnd": ("chargeperiodend", "ChargePeriodEnd"),
             "billing_currency": ("billingcurrency", "billing_currency"),
         }
 
@@ -85,7 +85,9 @@ class FOCUSParser(BaseBillingParser):
                         "CloudCost IQ supports FOCUS 1.x."
                     )
         mapped = self.map_frame(raw, resolver, cost_basis=cost_basis, notes=collected)
-        from app.ingestion.base_parser import ParsedBatch  # local import avoids cycle at module load
+        from app.ingestion.base_parser import (
+            ParsedBatch,  # local import avoids cycle at module load
+        )
 
         return ParsedBatch(
             frame=mapped,
@@ -113,49 +115,49 @@ class FOCUSParser(BaseBillingParser):
             "amortized": ("effectivecost", "effective_cost"),
             "list": ("listcost", "list_cost"),
         }[basis]
-        frame["cost_amount"] = resolver.numeric(raw, *cost_aliases)
-        if frame["cost_amount"].isna().all():
-            frame["cost_amount"] = resolver.numeric(raw, "billedcost", "billed_cost")
+        frame["BilledCost"] = resolver.numeric(raw, *cost_aliases)
+        if frame["BilledCost"].isna().all():
+            frame["BilledCost"] = resolver.numeric(raw, "billedcost", "billed_cost")
             notes.append("Requested FOCUS cost column was unavailable; BilledCost was used instead.")
 
-        frame["usage_start"] = resolver.datetime(raw, "chargeperiodstart", "charge_period_start")
-        frame["usage_end"] = resolver.datetime(raw, "chargeperiodend", "charge_period_end")
-        frame["charge_period_start"] = frame["usage_start"]
-        frame["charge_period_end"] = frame["usage_end"]
+        frame["usage_start"] = resolver.datetime(raw, "chargeperiodstart", "ChargePeriodStart")
+        frame["usage_end"] = resolver.datetime(raw, "chargeperiodend", "ChargePeriodEnd")
+        frame["ChargePeriodStart"] = frame["usage_start"]
+        frame["ChargePeriodEnd"] = frame["usage_end"]
 
-        frame["currency"] = resolver.text(raw, "billingcurrency", "billing_currency")
-        frame["billing_account_id"] = resolver.text(
-            raw, "billingaccountid", "billing_account_id"
+        frame["BillingCurrency"] = resolver.text(raw, "billingcurrency", "billing_currency")
+        frame["BillingAccountId"] = resolver.text(
+            raw, "billingaccountid", "BillingAccountId"
         )
-        frame["billing_account_name"] = resolver.text(
-            raw, "billingaccountname", "billing_account_name"
+        frame["BillingAccountName"] = resolver.text(
+            raw, "billingaccountname", "BillingAccountName"
         )
         frame["linked_account_id"] = resolver.text(raw, "subaccountid", "sub_account_id")
-        frame["service_name"] = resolver.text(raw, "servicename", "service_name")
-        frame["service_category"] = resolver.text(
-            raw, "servicecategory", "service_category"
+        frame["ServiceName"] = resolver.text(raw, "servicename", "ServiceName")
+        frame["ServiceCategory"] = resolver.text(
+            raw, "servicecategory", "ServiceCategory"
         )
-        frame["sku_id"] = resolver.first_text(
-            raw, [("skuid", "sku_id"), ("skupriceid", "sku_price_id")]
+        frame["SkuId"] = resolver.first_text(
+            raw, [("skuid", "SkuId"), ("skupriceid", "sku_price_id")]
         )
-        frame["sku_description"] = resolver.text(raw, "skumeter", "sku_meter", "skudetails")
-        frame["resource_id"] = resolver.text(raw, "resourceid", "resource_id")
-        frame["region"] = resolver.first_text(
+        frame["SkuDescription"] = resolver.text(raw, "skumeter", "sku_meter", "skudetails")
+        frame["ResourceId"] = resolver.text(raw, "resourceid", "ResourceId")
+        frame["RegionName"] = resolver.first_text(
             raw, [("regionid", "region_id"), ("regionname", "region_name")]
         )
-        frame["quantity"] = resolver.numeric(
+        frame["ConsumedQuantity"] = resolver.numeric(
             raw, "consumedquantity", "consumed_quantity", "pricingquantity"
         )
-        frame["unit"] = resolver.first_text(
+        frame["ConsumedUnit"] = resolver.first_text(
             raw, [("consumedunit", "consumed_unit"), ("pricingunit", "pricing_unit")]
         )
 
         charge_type = resolver.first_text(
-            raw, [("chargesubcategory", "charge_subcategory"), ("chargecategory", "charge_category")]
+            raw, [("chargesubcategory", "charge_subcategory"), ("chargecategory", "ChargeCategory")]
         )
         frame["charge_type"] = charge_type
-        frame["charge_category"] = build_charge_category_from_types(charge_type, provider="focus")
-        frame["pricing_model"] = _focus_pricing_model(
+        frame["ChargeCategory"] = build_charge_category_from_types(charge_type, provider="focus")
+        frame["PricingCategory"] = _focus_pricing_model(
             resolver.text(raw, "pricingcategory", "pricing_category")
         )
 
@@ -166,13 +168,13 @@ class FOCUSParser(BaseBillingParser):
         if invoice.isna().all() or (invoice == "").all():
             invoice = month_key(frame["usage_start"])
         frame["invoice_month"] = invoice.where(invoice != "", None)
-        frame["tags_json"] = resolver.series(raw, "tags")
+        frame["Tags"] = resolver.series(raw, "tags")
 
         provider_name = resolver.text(raw, "providername", "provider_name")
-        frame["provider"] = [_map_provider(value) for value in provider_name]
+        frame["ServiceProviderName"] = [_map_provider(value) for value in provider_name]
 
-        charge_category = frame["charge_category"]
-        cost = frame["cost_amount"]
+        charge_category = frame["ChargeCategory"]
+        cost = frame["BilledCost"]
         frame["tax_amount"] = cost.where(charge_category == "tax")
         frame["credits_amount"] = cost.where(charge_category.isin(["credit", "refund"]))
         return frame

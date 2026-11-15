@@ -31,8 +31,8 @@ def test_detect_and_parse_aws():
     report = validate_batch(normalized)
     assert report.valid_records == 1
     assert report.rejected_records == 0
-    assert normalized.loc[0, "currency"] == "USD"
-    assert normalized.loc[0, "provider"] == "AWS"
+    assert normalized.loc[0, "BillingCurrency"] == "USD"
+    assert normalized.loc[0, "ServiceProviderName"] == "AWS"
 
 
 def test_detect_and_parse_azure():
@@ -59,12 +59,12 @@ def test_detect_and_parse_azure():
 def test_detect_and_parse_gcp_nets_credits():
     raw = pd.DataFrame([
         {
-            "billing_account_id": "acct-1",
+            "BillingAccountId": "acct-1",
             "service.description": "Compute Engine",
             "usage_start_time": "2026-01-01T00:00:00Z",
             "cost": "10.00",
             "credits": '[{"amount": -2.00}]',
-            "currency": "USD",
+            "BillingCurrency": "USD",
         }
     ])
     detected = detect_schema(raw)
@@ -73,7 +73,7 @@ def test_detect_and_parse_gcp_nets_credits():
     normalized = finalize_records(
         batch.frame, provider=batch.provider, import_batch_id="i", source_file_id="f", cost_basis="billed", schema_version=batch.schema_version, raw_frame=batch.raw_frame
     )
-    assert abs(float(normalized.loc[0, "cost_amount"]) - 8.0) < 1e-9
+    assert abs(float(normalized.loc[0, "BilledCost"]) - 8.0) < 1e-9
     credits = normalized.loc[0, "credits_amount"]
     if pd.notna(credits):
         assert abs(float(credits) - (-2.0)) < 1e-9
@@ -84,8 +84,8 @@ def test_validation_rejects_missing_required_fields():
     from app.core.constants import NORMALIZED_COLUMNS
 
     frame = pd.DataFrame([{column: None for column in NORMALIZED_COLUMNS}])
-    frame.loc[0, "provider"] = "AWS"
-    frame.loc[0, "cost_amount"] = 1.0
+    frame.loc[0, "ServiceProviderName"] = "AWS"
+    frame.loc[0, "BilledCost"] = 1.0
     # missing usage_start and currency -> rejected
     report = validate_batch(frame)
     assert report.rejected_records == 1

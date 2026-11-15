@@ -12,7 +12,14 @@ from app.processing.data_quality import (
     missing_period_details,
     quality_summary,
 )
-from app.ui.components import cached_imports, download_csv, empty_state, load_costs, page_header, scope_sidebar
+from app.ui.components import (
+    cached_imports,
+    download_csv,
+    empty_state,
+    load_costs,
+    page_header,
+    scope_sidebar,
+)
 from app.utils.formatting import format_number, format_percent
 
 
@@ -115,13 +122,13 @@ def render() -> None:
 
 def summarize_cohorts(frame: pd.DataFrame) -> pd.DataFrame:
     rows = []
-    for (currency, basis), group in frame.groupby(["currency", "cost_basis"], dropna=False):
+    for (currency, basis), group in frame.groupby(["BillingCurrency", "cost_basis"], dropna=False):
         rows.append(
             {
                 "Currency": currency,
                 "Cost basis": basis,
                 "Records": len(group),
-                "Providers": ", ".join(sorted(group["provider"].dropna().astype(str).unique())),
+                "Providers": ", ".join(sorted(group["ServiceProviderName"].dropna().astype(str).unique())),
                 "First date": pd.to_datetime(group["usage_start"], errors="coerce").min(),
                 "Last date": pd.to_datetime(group["usage_start"], errors="coerce").max(),
             }

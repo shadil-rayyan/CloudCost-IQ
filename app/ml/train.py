@@ -15,12 +15,10 @@ candidate and the dashboard refuses to serve it.
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import os
 import platform
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -36,7 +34,6 @@ from app.ml.evaluate import evaluate_bundle_gates, evaluate_predictions, summari
 from app.ml.feature_engineering import (
     FEATURE_SCHEMA_VERSION,
     SupervisedBuildResult,
-    build_feature_schema,
 )
 from app.ml.time_series_split import SplitPlan
 from app.utils.dates import utc_now
@@ -66,23 +63,16 @@ class TrainingConfig:
         }
     )
     gates: dict[str, Any] = field(default_factory=dict)
-    mlflow_enabled: bool = False
-    mlflow_experiment: str = "cloudcost-iq-forecasting"
     target: str = "daily_billed_cost"
     cost_basis: str = "billed"
     currency: str = "USD"
 
     @classmethod
-    def from_ml_config(cls, *, currency: str | None = None, cost_basis: str | None = None) -> "TrainingConfig":
+    def from_ml_config(cls, *, currency: str | None = None, cost_basis: str | None = None) -> TrainingConfig:
         config = get_ml_config()
         model = config.get("model", {})
         training = config.get("training", {})
-        settings = get_settings()
-        mlflow_enabled = (
-            settings.mlflow_enabled
-            if settings.mlflow_enabled is not None
-            else bool(training.get("mlflow_enabled", False))
-        )
+        get_settings()
         return cls(
             model_name=str(model.get("model_name", "cloudcost_iq_global_xgboost_quantile")),
             objective=str(model.get("objective", "reg:quantileerror")),
@@ -94,11 +84,9 @@ class TrainingConfig:
             max_cat_to_onehot=int(model.get("max_cat_to_onehot", 4)),
             hyperparameters=dict(config.get("hyperparameters", {})),
             gates=dict(config.get("evaluation", {})),
-            mlflow_enabled=mlflow_enabled,
-            mlflow_experiment=str(training.get("mlflow_experiment", "cloudcost-iq-forecasting")),
             target=str(training.get("target", "daily_billed_cost")),
             cost_basis=str(cost_basis or training.get("cost_basis", "billed")),
-            currency=str(currency or training.get("currency", "USD")).upper(),
+            currency=str(currency or training.get("BillingCurrency", "USD")).upper(),
         )
 
 
@@ -245,7 +233,7 @@ def train_forecast_model(
             "selected_rounds": selected_rounds,
             "selection_rule": "median best_iteration across validation folds",
             "final_test_used_for_selection": False,
-            "refit_rows": int(len(frame)),
+            "refit_rows": len(frame),
         },
     }
 
@@ -323,13 +311,6 @@ def train_forecast_model(
         except (OSError, ValueError):  # pragma: no cover - defensive
             pass
 
-    if track_mlflow is None:
-        track_mlflow = config.mlflow_enabled
-    if track_mlflow:
-        result.messages.extend(
-            _log_to_mlflow(result, config, test_outcome, outcomes, dataset_quality)
-        )
-
     return result
 
 
@@ -383,8 +364,8 @@ def _fit_and_evaluate_fold(
         kind=kind,
         rounds=int(rounds),
         metrics=report,
-        train_rows=int(len(train_index)),
-        validation_rows=int(len(validation_index)),
+        train_rows=len(train_index),
+        validation_rows=len(validation_index),
         validation_start=_iso(validation_start),
         validation_end=_iso(validation_end),
     )
@@ -449,7 +430,7 @@ def _model_config_document(
         "max_cat_to_onehot": config.max_cat_to_onehot,
         "target": config.target,
         "cost_basis": config.cost_basis,
-        "currency": config.currency,
+        "BillingCurrency": config.currency,
         "feature_schema_version": FEATURE_SCHEMA_VERSION,
         "selected_rounds": selected_rounds,
         "hyperparameters": hyperparameters,
@@ -481,7 +462,7 @@ def _training_manifest(
     supervised: SupervisedBuildResult,
 ) -> dict[str, Any]:
     providers = quality.get("providers") or sorted(
-        frame["provider"].dropna().astype(str).unique().tolist()
+        frame["ServiceProviderName"].dropna().astype(str).unique().tolist()
     )
     return {
         "model_version": model_version,
@@ -493,10 +474,10 @@ def _training_manifest(
         "package_versions": _package_versions(),
         "random_seed": config.random_state,
         "providers": list(providers),
-        "currency": config.currency,
+        "BillingCurrency": config.currency,
         "cost_basis": config.cost_basis,
         "feature_schema_version": supervised.schema.schema_version,
-        "rows": int(len(frame)),
+        "rows": len(frame),
         "series_count": int(frame["series_id"].nunique()) if "series_id" in frame.columns else 0,
         "horizon_days": config.horizon_days,
         "target": config.target,
@@ -506,7 +487,7 @@ def _training_manifest(
 
 def _package_versions() -> dict[str, str]:
     versions: dict[str, str] = {}
-    for name in ("xgboost", "pandas", "numpy", "scikit-learn", "pyarrow", "shap", "mlflow"):
+    for name in ("xgboost", "pandas", "numpy", "scikit-learn", "pyarrow", "shap"):
         try:
             module = __import__(name.replace("-", "_"))
             versions[name] = str(getattr(module, "__version__", "unknown"))
@@ -634,60 +615,6 @@ Baseline comparison (final test):
 
 
 # --------------------------------------------------------------------------- #
-# Experiment tracking
-# --------------------------------------------------------------------------- #
-def _log_to_mlflow(
-    result: TrainingResult,
-    config: TrainingConfig,
-    test_outcome: FoldOutcome,
-    outcomes: list[FoldOutcome],
-    dataset_quality: dict[str, Any],
-) -> list[str]:
-    try:
-        import mlflow
-    except Exception:  # pragma: no cover - optional dependency
-        return ["MLflow is not installed; experiment tracking was skipped."]
-
-    settings = get_settings()
-    tracking_uri = settings.mlflow_tracking_uri or (get_settings().project_root / "mlruns").as_uri()
-    try:
-        mlflow.set_tracking_uri(tracking_uri)
-        mlflow.set_experiment(config.mlflow_experiment)
-        with mlflow.start_run(run_name=result.version):
-            mlflow.log_params(
-                {
-                    "objective": config.objective,
-                    "quantiles": ",".join(str(value) for value in config.quantiles),
-                    "horizon_days": config.horizon_days,
-                    "selected_rounds": result.rounds,
-                    "currency": config.currency,
-                    "cost_basis": config.cost_basis,
-                    "dataset_fingerprint": str(dataset_quality.get("dataset_fingerprint")),
-                }
-            )
-            for outcome in outcomes:
-                mlflow.log_metrics(
-                    {
-                        f"{outcome.fold}_wape": _finite(outcome.metrics.get("wape")),
-                        f"{outcome.fold}_mae": _finite(outcome.metrics.get("mae")),
-                        f"{outcome.fold}_coverage": _finite(outcome.metrics.get("interval_coverage")),
-                    }
-                )
-            mlflow.log_metrics(
-                {
-                    "final_test_wape": _finite(test_outcome.metrics.get("wape")),
-                    "final_test_mae": _finite(test_outcome.metrics.get("mae")),
-                    "final_test_pinball": _finite(test_outcome.metrics.get("pinball_mean")),
-                    "final_test_coverage": _finite(test_outcome.metrics.get("interval_coverage")),
-                }
-            )
-            if result.bundle_path is not None:
-                mlflow.log_artifacts(str(result.bundle_path))
-        return [f"MLflow run logged to {tracking_uri}."]
-    except Exception as exc:  # pragma: no cover - tracking must never break training
-        return [f"MLflow logging failed ({type(exc).__name__}); training results are unaffected."]
-
-
 def _finite(value: Any) -> float:
     try:
         number = float(value)

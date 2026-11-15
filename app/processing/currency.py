@@ -16,9 +16,9 @@ from app.core.exceptions import CurrencyMismatchError
 
 
 def distinct_currencies(frame: pd.DataFrame) -> list[str]:
-    if frame is None or frame.empty or "currency" not in frame.columns:
+    if frame is None or frame.empty or "BillingCurrency" not in frame.columns:
         return []
-    values = frame["currency"].dropna().astype(str).str.upper().unique().tolist()
+    values = frame["BillingCurrency"].dropna().astype(str).str.upper().unique().tolist()
     return sorted(value for value in values if value)
 
 
@@ -46,11 +46,11 @@ def currency_cohorts(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
     """Split data into independent single-currency cohorts."""
     if frame is None or frame.empty:
         return {}
-    if "currency" not in frame.columns:
+    if "BillingCurrency" not in frame.columns:
         raise CurrencyMismatchError("Billing records have no currency column")
     cohorts: dict[str, pd.DataFrame] = {}
     for currency in distinct_currencies(frame):
-        cohorts[currency] = frame.loc[frame["currency"].astype(str).str.upper() == currency].copy()
+        cohorts[currency] = frame.loc[frame["BillingCurrency"].astype(str).str.upper() == currency].copy()
     return cohorts
 
 

@@ -10,29 +10,29 @@ def provider_comparison(frame: pd.DataFrame) -> pd.DataFrame:
     if frame is None or frame.empty:
         return pd.DataFrame(
             columns=[
-                "provider",
+                "ServiceProviderName",
                 "cost",
                 "records",
                 "share",
                 "services",
                 "accounts",
-                "currency",
+                "BillingCurrency",
                 "cost_basis",
             ]
         )
     grouped = (
-        frame.groupby(["provider", "currency", "cost_basis"], dropna=False)
+        frame.groupby(["ServiceProviderName", "BillingCurrency", "cost_basis"], dropna=False)
         .agg(
-            cost=("cost_amount", "sum"),
-            records=("cost_amount", "size"),
-            services=("service_name", "nunique"),
-            accounts=("billing_account_id", "nunique"),
+            cost=("BilledCost", "sum"),
+            records=("BilledCost", "size"),
+            services=("ServiceName", "nunique"),
+            accounts=("BillingAccountId", "nunique"),
         )
         .reset_index()
     )
-    totals = grouped.groupby(["currency", "cost_basis"])["cost"].transform("sum").replace(0, pd.NA)
+    totals = grouped.groupby(["BillingCurrency", "cost_basis"])["cost"].transform("sum").replace(0, pd.NA)
     grouped["share"] = (grouped["cost"] / totals).fillna(0.0)
-    return grouped.sort_values(["currency", "cost_basis", "cost"], ascending=[True, True, False])
+    return grouped.sort_values(["BillingCurrency", "cost_basis", "cost"], ascending=[True, True, False])
 
 
 def provider_trend(frame: pd.DataFrame, freq: str = "M") -> pd.DataFrame:
@@ -40,7 +40,7 @@ def provider_trend(frame: pd.DataFrame, freq: str = "M") -> pd.DataFrame:
         return pd.DataFrame()
     from app.processing.aggregation import aggregate_costs
 
-    grouped = aggregate_costs(frame, freq=freq, group_keys=("provider",))
+    grouped = aggregate_costs(frame, freq=freq, group_keys=("ServiceProviderName",))
     return grouped.rename(columns={"period": "period"}).sort_values("period")
 
 
@@ -49,5 +49,5 @@ def provider_share_table(frame: pd.DataFrame) -> pd.DataFrame:
     if comparison.empty:
         return comparison
     return comparison[
-        ["provider", "currency", "cost_basis", "cost", "share", "services", "accounts"]
+        ["ServiceProviderName", "BillingCurrency", "cost_basis", "cost", "share", "services", "accounts"]
     ]

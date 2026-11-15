@@ -17,7 +17,7 @@ import pandas as pd
 from app.core.config import get_app_config
 from app.processing.normalization import empty_normalized_frame
 
-_DATE_EXPRESSION = "COALESCE(charge_period_start, usage_start)"
+_DATE_EXPRESSION = "COALESCE(\"ChargePeriodStart\", \"usage_start\")"
 
 
 @dataclass(slots=True)
@@ -98,11 +98,11 @@ class CostStore:
         clauses: list[str] = []
         params: list[Any] = []
         for column, values in (
-            ("provider", filters.providers),
-            ("billing_account_id", filters.billing_accounts),
-            ("service_name", filters.services),
-            ("region", filters.regions),
-            ("currency", filters.currencies),
+            ("ServiceProviderName", filters.providers),
+            ("BillingAccountId", filters.billing_accounts),
+            ("ServiceName", filters.services),
+            ("RegionName", filters.regions),
+            ("BillingCurrency", filters.currencies),
         ):
             if values:
                 placeholders = ", ".join("?" for _ in values)
@@ -159,11 +159,11 @@ class CostStore:
                 f"SELECT MIN({_DATE_EXPRESSION}), MAX({_DATE_EXPRESSION}), COUNT(*) FROM {source}"
             ).fetchone()
             return StoreDimensions(
-                providers=distinct("provider"),
-                billing_accounts=distinct("billing_account_id"),
-                services=distinct("service_name"),
-                regions=distinct("region"),
-                currencies=distinct("currency"),
+                providers=distinct("ServiceProviderName"),
+                billing_accounts=distinct("BillingAccountId"),
+                services=distinct("ServiceName"),
+                regions=distinct("RegionName"),
+                currencies=distinct("BillingCurrency"),
                 cost_bases=distinct("cost_basis"),
                 date_min=bounds[0].date() if bounds and bounds[0] is not None else None,
                 date_max=bounds[1].date() if bounds and bounds[1] is not None else None,

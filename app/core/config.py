@@ -47,8 +47,6 @@ class Settings(BaseSettings):
     artifacts_dir: Path | None = None
     database_path: Path | None = None
 
-    mlflow_enabled: bool | None = None
-    mlflow_tracking_uri: str | None = None
 
     max_upload_mb: int | None = None
 

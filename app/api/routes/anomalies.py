@@ -6,7 +6,10 @@ import datetime as dt
 
 from fastapi import APIRouter, Query
 
-from app.analytics.anomaly_detection import anomaly_summary, detect_statistical_anomalies
+from app.analytics.anomaly_detection import (
+    anomaly_summary,
+    detect_statistical_anomalies,
+)
 from app.api.deps import cost_filter, load_costs, records
 from app.api.schemas import RecordListResponse
 

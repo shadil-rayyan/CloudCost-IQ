@@ -31,7 +31,6 @@ def _fast_config() -> TrainingConfig:
             "max_quantile_crossing_rate": 1.0,
             "require_baseline_comparison": True,
         },
-        mlflow_enabled=False,
     )
 
 

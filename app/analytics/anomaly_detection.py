@@ -8,7 +8,6 @@ spending*, never as a confirmed infrastructure failure.
 
 from __future__ import annotations
 
-import datetime as dt
 from typing import Any
 
 import numpy as np
@@ -18,10 +17,10 @@ from app.processing.aggregation import add_billing_date
 
 ANOMALY_COLUMNS = [
     "detection_date",
-    "provider",
-    "billing_account_id",
-    "service_name",
-    "currency",
+    "ServiceProviderName",
+    "BillingAccountId",
+    "ServiceName",
+    "BillingCurrency",
     "cost_basis",
     "expected_cost",
     "observed_cost",
@@ -32,7 +31,7 @@ ANOMALY_COLUMNS = [
     "explanation",
 ]
 
-DEFAULT_KEYS = ("provider", "billing_account_id", "service_name")
+DEFAULT_KEYS = ("ServiceProviderName", "BillingAccountId", "ServiceName")
 
 
 def _severity(score: float, threshold: float) -> str:
@@ -67,7 +66,7 @@ def detect_statistical_anomalies(
         if not isinstance(key_values, tuple):
             key_values = (key_values,)
         daily = (
-            group.groupby("billing_date", dropna=False)["cost_amount"]
+            group.groupby("billing_date", dropna=False)["BilledCost"]
             .sum()
             .sort_index()
             .astype("float64")
@@ -92,7 +91,7 @@ def detect_statistical_anomalies(
         flagged = (scores >= threshold) & median.notna()
         if not flagged.any():
             continue
-        currency = _first_value(group["currency"])
+        currency = _first_value(group["BillingCurrency"])
         basis = _first_value(group["cost_basis"])
         for date, observed in daily.loc[flagged].items():
             expected = float(median.loc[date])
@@ -101,12 +100,12 @@ def detect_statistical_anomalies(
             results.append(
                 {
                     "detection_date": pd.Timestamp(date).date().isoformat(),
-                    "provider": dict(zip(keys, key_values, strict=False)).get("provider"),
-                    "billing_account_id": dict(zip(keys, key_values, strict=False)).get(
-                        "billing_account_id"
+                    "ServiceProviderName": dict(zip(keys, key_values, strict=False)).get("ServiceProviderName"),
+                    "BillingAccountId": dict(zip(keys, key_values, strict=False)).get(
+                        "BillingAccountId"
                     ),
-                    "service_name": dict(zip(keys, key_values, strict=False)).get("service_name"),
-                    "currency": currency,
+                    "ServiceName": dict(zip(keys, key_values, strict=False)).get("ServiceName"),
+                    "BillingCurrency": currency,
                     "cost_basis": basis,
                     "expected_cost": expected,
                     "observed_cost": observed_value,
@@ -136,7 +135,7 @@ def detect_from_forecast(
     actual: pd.DataFrame,
     forecast: pd.DataFrame,
     *,
-    keys: tuple[str, ...] = ("provider", "billing_account_id", "service_name"),
+    keys: tuple[str, ...] = ("ServiceProviderName", "BillingAccountId", "ServiceName"),
 ) -> pd.DataFrame:
     """Compare realized daily cost with a validated model's P10/P90 interval.
 
@@ -148,7 +147,7 @@ def detect_from_forecast(
 
     actual_frame = actual.copy()
     if "cost" not in actual_frame.columns:
-        actual_frame = actual_frame.rename(columns={"cost_amount": "cost"})
+        actual_frame = actual_frame.rename(columns={"BilledCost": "cost"})
     actual_frame["date"] = pd.to_datetime(actual_frame["date"], errors="coerce").dt.normalize()
     forecast_frame = forecast.copy()
     forecast_frame["date"] = pd.to_datetime(forecast_frame["date"], errors="coerce").dt.normalize()
@@ -178,10 +177,10 @@ def detect_from_forecast(
         rows.append(
             {
                 "detection_date": pd.Timestamp(row["date"]).date().isoformat(),
-                "provider": row.get("provider"),
-                "billing_account_id": row.get("billing_account_id"),
-                "service_name": row.get("service_name"),
-                "currency": row.get("currency"),
+                "ServiceProviderName": row.get("ServiceProviderName"),
+                "BillingAccountId": row.get("BillingAccountId"),
+                "ServiceName": row.get("ServiceName"),
+                "BillingCurrency": row.get("BillingCurrency"),
                 "cost_basis": row.get("cost_basis"),
                 "expected_cost": expected,
                 "observed_cost": observed,
@@ -210,7 +209,7 @@ def anomaly_summary(anomalies: pd.DataFrame) -> dict[str, Any]:
     if anomalies is None or anomalies.empty:
         return {"count": 0, "by_severity": {}, "latest_date": None}
     return {
-        "count": int(len(anomalies)),
+        "count": len(anomalies),
         "by_severity": anomalies["severity"].value_counts().astype(int).to_dict(),
         "latest_date": anomalies["detection_date"].iloc[0] if len(anomalies) else None,
     }

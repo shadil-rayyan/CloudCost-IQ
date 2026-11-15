@@ -7,8 +7,9 @@ import streamlit as st
 
 from app.analytics.store import CostStore
 from app.core.config import get_app_config, get_ml_config
-from app.database.repositories import SettingsRepository
+from app.database.repositories import ImportRepository, SettingsRepository
 from app.ml.artifact_manager import ArtifactManager
+from app.processing.storage import ProcessedStore
 from app.ui.components import clear_data_cache, page_header
 from app.utils.formatting import format_number
 
@@ -116,7 +117,7 @@ def render() -> None:
             {"Setting": "Horizon (days)", "Value": model.get("forecast_horizon_days", "-")},
             {"Setting": "Target", "Value": training.get("target", "-")},
             {"Setting": "Cost basis", "Value": training.get("cost_basis", "-")},
-            {"Setting": "Currency cohort", "Value": training.get("currency", "-")},
+            {"Setting": "Currency cohort", "Value": training.get("BillingCurrency", "-")},
             {"Setting": "Min history (days)", "Value": training.get("min_history_days", "-")},
             {"Setting": "Max WAPE gate", "Value": gates.get("max_wape", "-")},
             {"Setting": "Min interval coverage", "Value": gates.get("min_interval_coverage", "-")},
@@ -137,6 +138,17 @@ def render() -> None:
     if st.button("Clear dashboard data caches"):
         clear_data_cache()
         st.success("Cached dashboard queries were cleared. Data was not modified.")
+
+    st.subheader("Reset uploaded data")
+    if st.button("Clear all uploaded billing data", type="secondary"):
+        store = ProcessedStore()
+        repo = ImportRepository()
+        for import_id in store.list_import_ids():
+            store.delete(import_id)
+            repo.delete(import_id)
+        clear_data_cache()
+        st.success("All uploaded billing data and import history were cleared.")
+        st.rerun()
     st.caption(
         "CloudCost IQ does not request or store cloud provider credentials. MVP 1/2 operate on "
         "uploaded billing exports only."

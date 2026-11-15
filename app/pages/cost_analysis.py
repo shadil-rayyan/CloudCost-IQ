@@ -50,14 +50,14 @@ def render() -> None:
         return
     currency, basis = currency_for(summary, cohort)
     cohort_frame = frame.loc[
-        (frame["currency"] == cohort["currency"]) & (frame["cost_basis"] == cohort["cost_basis"])
+        (frame["BillingCurrency"] == cohort["BillingCurrency"]) & (frame["cost_basis"] == cohort["cost_basis"])
     ].copy()
     if cohort_frame.empty:
         st.info("The selected reporting cohort has no records.")
         return
 
     st.caption(
-        f"Analyzing {len(cohort_frame):,} records in {cohort['currency']} on the "
+        f"Analyzing {len(cohort_frame):,} records in {cohort['BillingCurrency']} on the "
         f"{cohort['cost_basis']} cost basis."
     )
     _trend_section(cohort_frame, currency, basis)
@@ -81,12 +81,12 @@ def _trend_section(frame: pd.DataFrame, currency: str | None, basis: str | None)
     with controls[1]:
         dimension = st.selectbox(
             "Split by",
-            options=["provider", "service_name", "billing_account_id", "region"],
+            options=["ServiceProviderName", "ServiceName", "BillingAccountId", "RegionName"],
             format_func={
-                "provider": "Provider",
-                "service_name": "Service",
-                "billing_account_id": "Account",
-                "region": "Region",
+                "ServiceProviderName": "Provider",
+                "ServiceName": "Service",
+                "BillingAccountId": "Account",
+                "RegionName": "Region",
             }.get,
             index=0,
             key="analysis_trend_dimension",
@@ -169,18 +169,18 @@ def _records_section(frame: pd.DataFrame) -> None:
     visible_columns = [
         column
         for column in (
-            "provider",
-            "billing_account_id",
-            "service_name",
-            "service_category",
-            "region",
+            "ServiceProviderName",
+            "BillingAccountId",
+            "ServiceName",
+            "ServiceCategory",
+            "RegionName",
             "usage_start",
             "invoice_month",
-            "cost_amount",
-            "currency",
+            "BilledCost",
+            "BillingCurrency",
             "cost_basis",
-            "charge_category",
-            "resource_id",
+            "ChargeCategory",
+            "ResourceId",
         )
         if column in frame.columns
     ]

@@ -166,16 +166,16 @@ def _render_analysis(analysis) -> None:
         visible = [
             column
             for column in (
-                "provider",
-                "billing_account_id",
-                "service_name",
-                "service_category",
-                "region",
+                "ServiceProviderName",
+                "BillingAccountId",
+                "ServiceName",
+                "ServiceCategory",
+                "RegionName",
                 "usage_start",
-                "cost_amount",
-                "currency",
+                "BilledCost",
+                "BillingCurrency",
                 "cost_basis",
-                "charge_category",
+                "ChargeCategory",
             )
             if column in preview.columns
         ]

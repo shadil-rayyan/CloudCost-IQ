@@ -9,8 +9,9 @@ it).
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 
@@ -53,7 +54,7 @@ def _single_cohort(ctx: RuleContext) -> tuple[str | None, str | None]:
     """Rules run per currency/basis; mixed scopes are skipped by the engine."""
     if ctx.frame is None or ctx.frame.empty:
         return ctx.currency, ctx.cost_basis
-    currencies = ctx.frame["currency"].dropna().unique().tolist()
+    currencies = ctx.frame["BillingCurrency"].dropna().unique().tolist()
     bases = ctx.frame["cost_basis"].dropna().unique().tolist()
     if len(currencies) > 1 or len(bases) > 1:
         return None, None
@@ -75,7 +76,7 @@ def service_cost_increase(
     frame = ctx.frame
     if frame is None or frame.empty:
         return drafts
-    currency, basis = _single_cohort(ctx)
+    currency, _basis = _single_cohort(ctx)
     if currency is None:
         return drafts
 
@@ -89,9 +90,9 @@ def service_cost_increase(
     previous = working.loc[
         (working["billing_date"] >= previous_start) & (working["billing_date"] < recent_start)
     ]
-    keys = ["provider", "billing_account_id", "service_name"]
-    recent_totals = recent.groupby(keys, dropna=False)["cost_amount"].sum().rename("recent")
-    previous_totals = previous.groupby(keys, dropna=False)["cost_amount"].sum().rename("previous")
+    keys = ["ServiceProviderName", "BillingAccountId", "ServiceName"]
+    recent_totals = recent.groupby(keys, dropna=False)["BilledCost"].sum().rename("recent")
+    previous_totals = previous.groupby(keys, dropna=False)["BilledCost"].sum().rename("previous")
     combined = pd.concat([recent_totals, previous_totals], axis=1).fillna(0.0).reset_index()
 
     for _, row in combined.iterrows():
@@ -106,12 +107,12 @@ def service_cost_increase(
         drafts.append(
             RecommendationDraft(
                 rule_id="service_cost_increase",
-                title=f"{row['service_name']} cost increased {change_ratio:.0%} week over week",
-                provider=row["provider"],
-                account=row["billing_account_id"],
-                service=row["service_name"],
+                title=f"{row['ServiceName']} cost increased {change_ratio:.0%} week over week",
+                provider=row["ServiceProviderName"],
+                account=row["BillingAccountId"],
+                service=row["ServiceName"],
                 observation=(
-                    f"Daily cost for {row['service_name']} averaged "
+                    f"Daily cost for {row['ServiceName']} averaged "
                     f"{recent_cost / window_days:,.2f} {currency}/day in the latest {window_days} days, "
                     f"up from {previous_cost / window_days:,.2f} {currency}/day in the prior period."
                 ),
@@ -141,7 +142,7 @@ def budget_projection(ctx: RuleContext) -> list[RecommendationDraft]:
     """Project month-end spend against the configured workspace budget."""
     if not ctx.monthly_budget or ctx.frame is None or ctx.frame.empty:
         return []
-    currency, basis = _single_cohort(ctx)
+    currency, _basis = _single_cohort(ctx)
     if currency is None:
         return []
     working = add_billing_date(ctx.frame)
@@ -150,7 +151,7 @@ def budget_projection(ctx: RuleContext) -> list[RecommendationDraft]:
         return []
     latest = pd.Timestamp(latest)
     month_start = latest.replace(day=1)
-    month_to_date = working.loc[working["billing_date"] >= month_start, "cost_amount"].sum()
+    month_to_date = working.loc[working["billing_date"] >= month_start, "BilledCost"].sum()
     days_elapsed = max((latest - month_start).days + 1, 1)
     days_in_month = latest.days_in_month
     projected = float(month_to_date) / days_elapsed * days_in_month
@@ -197,34 +198,34 @@ def spending_concentration(ctx: RuleContext, *, share_threshold: float = 0.6) ->
     frame = ctx.frame
     if frame is None or frame.empty:
         return []
-    currency, basis = _single_cohort(ctx)
+    currency, _basis = _single_cohort(ctx)
     if currency is None:
         return []
     grouped = (
-        frame.groupby(["service_name", "provider"], dropna=False)["cost_amount"]
+        frame.groupby(["ServiceName", "ServiceProviderName"], dropna=False)["BilledCost"]
         .sum()
         .reset_index()
-        .sort_values("cost_amount", ascending=False)
+        .sort_values("BilledCost", ascending=False)
     )
-    total = float(grouped["cost_amount"].sum())
+    total = float(grouped["BilledCost"].sum())
     if total <= 0 or grouped.empty:
         return []
     top = grouped.iloc[0]
-    share = float(top["cost_amount"]) / total
+    share = float(top["BilledCost"]) / total
     if share < share_threshold:
         return []
     latest = add_billing_date(frame)["billing_date"].max()
     return [
         RecommendationDraft(
             rule_id="spending_concentration",
-            title=f"{top['service_name']} accounts for {share:.0%} of selected spend",
-            provider=top["provider"],
-            service=top["service_name"],
+            title=f"{top['ServiceName']} accounts for {share:.0%} of selected spend",
+            provider=top["ServiceProviderName"],
+            service=top["ServiceName"],
             observation=(
-                f"{top['service_name']} represents {share:.1%} of the selected {currency} spend "
-                f"({float(top['cost_amount']):,.2f} {currency})."
+                f"{top['ServiceName']} represents {share:.1%} of the selected {currency} spend "
+                f"({float(top['BilledCost']):,.2f} {currency})."
             ),
-            evidence=f"Total selected cost: {total:,.2f} {currency}; top service cost: {float(top['cost_amount']):,.2f} {currency}.",
+            evidence=f"Total selected cost: {total:,.2f} {currency}; top service cost: {float(top['BilledCost']):,.2f} {currency}.",
             suggested_action=(
                 "Confirm the service is intentionally the primary workload and review its cost drivers "
                 "and ownership."
@@ -241,13 +242,13 @@ def spending_concentration(ctx: RuleContext, *, share_threshold: float = 0.6) ->
 def storage_growth(ctx: RuleContext, *, threshold: float = 0.2, window_days: int = 30) -> list[RecommendationDraft]:
     """Flag storage-category spend growth over the last 30 days."""
     frame = ctx.frame
-    if frame is None or frame.empty or "service_category" not in frame.columns:
+    if frame is None or frame.empty or "ServiceCategory" not in frame.columns:
         return []
-    currency, basis = _single_cohort(ctx)
+    currency, _basis = _single_cohort(ctx)
     if currency is None:
         return []
     working = add_billing_date(frame)
-    storage = working.loc[working["service_category"] == "storage"]
+    storage = working.loc[working["ServiceCategory"] == "storage"]
     if storage.empty:
         return []
     latest = storage["billing_date"].max()
@@ -255,10 +256,10 @@ def storage_growth(ctx: RuleContext, *, threshold: float = 0.2, window_days: int
         return []
     recent_start = latest - pd.Timedelta(days=window_days - 1)
     previous_start = recent_start - pd.Timedelta(days=window_days)
-    recent = storage.loc[storage["billing_date"] >= recent_start, "cost_amount"].sum()
+    recent = storage.loc[storage["billing_date"] >= recent_start, "BilledCost"].sum()
     previous = storage.loc[
         (storage["billing_date"] >= previous_start) & (storage["billing_date"] < recent_start),
-        "cost_amount",
+        "BilledCost",
     ].sum()
     if previous <= 0 or recent <= 0:
         return []
@@ -269,7 +270,7 @@ def storage_growth(ctx: RuleContext, *, threshold: float = 0.2, window_days: int
         RecommendationDraft(
             rule_id="storage_growth",
             title=f"Storage cost increased {change_ratio:.0%} over {window_days} days",
-            provider=_first_non_null(storage["provider"]),
+            provider=_first_non_null(storage["ServiceProviderName"]),
             service="Storage (category)",
             observation=(
                 f"Storage-category spend was {float(recent):,.2f} {currency} in the latest {window_days} days "
@@ -298,7 +299,7 @@ def unused_commitment_charges(ctx: RuleContext) -> list[RecommendationDraft]:
     frame = ctx.frame
     if frame is None or frame.empty or "charge_type" not in frame.columns:
         return []
-    currency, basis = _single_cohort(ctx)
+    currency, _basis = _single_cohort(ctx)
     if currency is None:
         return []
     text = frame["charge_type"].fillna("").astype(str).str.lower()
@@ -306,10 +307,10 @@ def unused_commitment_charges(ctx: RuleContext) -> list[RecommendationDraft]:
     unused = frame.loc[unused_mask]
     if unused.empty:
         return []
-    total = float(unused["cost_amount"].sum())
+    total = float(unused["BilledCost"].sum())
     if total <= 0:
         return []
-    provider = _first_non_null(unused["provider"])
+    provider = _first_non_null(unused["ServiceProviderName"])
     return [
         RecommendationDraft(
             rule_id="unused_commitment_charges",
@@ -345,7 +346,7 @@ def service_portfolio_change(ctx: RuleContext, *, top_n: int = 5) -> list[Recomm
     frame = ctx.frame
     if frame is None or frame.empty:
         return []
-    currency, basis = _single_cohort(ctx)
+    currency, _basis = _single_cohort(ctx)
     if currency is None:
         return []
     growth = fastest_growing_services(frame, top_n=top_n, lookback_days=30)
@@ -357,11 +358,11 @@ def service_portfolio_change(ctx: RuleContext, *, top_n: int = 5) -> list[Recomm
     return [
         RecommendationDraft(
             rule_id="service_growth_leader",
-            title=f"Largest 30-day cost increase: {top['service_name']}",
-            provider=_first_non_null(frame["provider"]),
-            service=top["service_name"],
+            title=f"Largest 30-day cost increase: {top['ServiceName']}",
+            provider=_first_non_null(frame["ServiceProviderName"]),
+            service=top["ServiceName"],
             observation=(
-                f"{top['service_name']} increased by {float(top['change']):,.2f} {currency} "
+                f"{top['ServiceName']} increased by {float(top['change']):,.2f} {currency} "
                 "between the last 30 days and the previous 30 days."
             ),
             evidence=(
